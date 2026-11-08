@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v5</title>
+<title>ACS Reinigungsnachweis v6</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -469,11 +469,11 @@ window.renderLogin=async function(){if(PROBE)return L.renderLogin();
   const {data:{session}}=await SB.auth.getSession();
   const kopf=`<img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>`;
   const probe=`<button class="btn full sec" style="margin-top:18px" onclick="probeStart()">Probebetrieb ausprobieren (nichts wird gespeichert)</button>`;
-  if(!session){$("#app").innerHTML=`<div class="login card">${kopf}<p class="meta">Anmelden mit Ihrer E-Mail. Sie bekommen eine E-Mail mit einem Anmeldelink, kein Passwort nötig. Den Link auf demselben Gerät antippen.</p>
+  if(!session){$("#app").innerHTML=`<div class="login card">${kopf}<p class="meta">Anmelden mit Ihrer E-Mail. Sie bekommen einen Code per E-Mail, kein Passwort nötig.</p>
     ${einladung()?`<p class="pill p-blue">Einladung erkannt. Nach der Anmeldung tragen Sie Ihren Namen ein.</p>`:""}
     <div class="f" style="text-align:left"><label>E-Mail</label><input id="lm" type="email" inputmode="email" autocomplete="email" value="${esc(LOGIN_MAIL)}"></div>
-    <button class="btn full" onclick="codeSenden()">Anmeldelink senden</button>
-    <div id="codefeld" style="display:${LOGIN_MAIL?"block":"none"}"><div class="f" style="text-align:left"><label>Oder Code aus der E-Mail (falls einer drinsteht)</label><input id="lc" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></div>
+    <button class="btn full" onclick="codeSenden()">Code senden</button>
+    <div id="codefeld" style="display:${LOGIN_MAIL?"block":"none"}"><div class="f" style="text-align:left"><label>Code aus der E-Mail</label><input id="lc" inputmode="numeric" autocomplete="one-time-code" maxlength="8"></div>
     <button class="btn full ok" onclick="codePruefen()">Anmelden</button></div>${probe}</div>`;return}
   const {data:pr,error}=await SB.rpc("fn_meine_projekte");
   if(error){$("#app").innerHTML=`<div class="login card">${kopf}<p>${esc(error.message)}</p><button class="btn full sec" onclick="ausloggen()">Abmelden</button></div>`;return}
@@ -487,7 +487,7 @@ window.renderLogin=async function(){if(PROBE)return L.renderLogin();
   window._pr=pr;if(pr.length===1&&!window._gewaehlt)projektOeffnen(0)};
 async function codeSenden(){const m=$("#lm").value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))return toast("Bitte E-Mail prüfen");
   const {error}=await SB.auth.signInWithOtp({email:m,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}});
-  if(error)return toast(error.message);LOGIN_MAIL=m;toast("E-Mail ist unterwegs. Bitte Postfach (auch Spam) prüfen und den Link antippen.");$("#codefeld").style.display="block";$("#lc").focus()}
+  if(error)return toast(error.message);LOGIN_MAIL=m;toast("Code ist unterwegs. Bitte Postfach prüfen (auch Spam).");$("#codefeld").style.display="block";$("#lc").focus()}
 async function codePruefen(){const t=$("#lc").value.replace(/\D/g,"");if(t.length<6)return toast("Bitte den Code aus der E-Mail eingeben");
   const {error}=await SB.auth.verifyOtp({email:LOGIN_MAIL,token:t,type:"email"});if(error)return toast("Code falsch oder abgelaufen");renderLogin()}
 async function einloesen(){const n=$("#en").value.trim(),f=$("#ef").value.trim();if(n.length<3)return toast("Bitte Vor- und Nachnamen");
