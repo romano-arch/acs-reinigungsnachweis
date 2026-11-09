@@ -372,9 +372,41 @@ function vNachweis(){const {dg,st}=nachweisDaten(),neu=dg.filter(d=>!d.rechnung)
   ${st.length?`<h3>Stundenarbeiten</h3><div class="scroll"><table><tr><th>Datum</th><th>Tätigkeit</th><th>Std.</th><th>angeordnet</th><th>bestätigt</th></tr>${st.map(s=>`<tr><td>${dd(s.datum)}</td><td>${esc(s.was)}</td><td>${s.pers}×${fz(s.std)}=${fz(+(s.pers*s.std).toFixed(2))}</td><td>${esc(s.an_von)}</td><td>${dt(s.be_am)} ${esc(s.be_von)}</td></tr>`).join("")}</table></div>`:""}
   ${nwSig()?`<div class="task" style="border-left-color:var(--gp)"><b>Vom Bauleiter unterschrieben</b><div class="meta">${esc(nwSig().name)} · ${dtz(nwSig().zeit)}</div><img src="${nwSig().img}" style="height:50px"></div>`:(dg.length||st.length)?`<div class="task"><b>Noch nicht vom Bauleiter unterschrieben</b>${U.rolle==="bauleiter"?`<button class="btn full ok" onclick="nwUnterschreiben()">Nachweis prüfen + unterschreiben</button>`:`<div class="meta">Der Bauleiter unterschreibt unter „Nachweis“ auf seinem Handy.</div>`}</div>`:""}
   <div class="row" style="margin-top:12px"><button class="btn" onclick="drucken()">Nachweis ansehen</button></div></div>
+  ${darf("buero")?abrechnungKarte(dg,st):""}
   ${darf("buero")&&!NWRE&&(neu.length||sneu.length)?`<div class="card"><h2>Rechnungsnummer eintragen</h2><p class="meta">Die Rechnung selbst schreibt ihr wie gewohnt im Rechnungsprogramm. Hier wird nur vermerkt, mit welcher Rechnung diese Einträge abgerechnet sind, damit nichts doppelt oder gar nicht abgerechnet wird. Danach kann der Bauleiter sie nicht mehr zurücknehmen.</p>
   <div class="f"><label>Rechnungsnummer *</label><input id="rnr" placeholder="z. B. 2026-123"></div><button class="btn full ok" onclick="tueAbrechnen()">${neu.length+sneu.length} Einträge mit dieser Nummer vermerken</button></div>`:""}
   ${U.rolle==="admin"&&NWRE?`<div class="card"><h2>Rechnungsnummer ${esc(NWRE)} korrigieren</h2><p class="meta">Nur bei Tippfehlern oder wenn die Rechnung storniert wurde. Steht mit Grund im Verlauf.</p><div class="f"><label>Neue Nummer (leer lassen = aufheben)</label><input id="rneu"></div><div class="f"><label>Grund *</label><input id="rgr"></div><button class="btn full red" onclick="korrRe()">Korrigieren</button></div>`:""}`}
+/* ---- Abrechnung mit Vertragspreisen (nur Büro/Admin; Preise kommen nur für diese Rollen aus der Datenbank) ---- */
+const eur=n=>(+n||0).toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const ozSort=(a,b)=>{const x=a.split(".").filter(Boolean).map(Number),y=b.split(".").filter(Boolean).map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d}return 0};
+function abrechnung(dg,st){const P=D.preise||{},pos={},fi={};let fehlt=0;
+  const firma=f=>fi[f]=fi[f]||{fein:0,nach:0,betrag:0,std:0,liste:[]};
+  dg.forEach(d=>{const p=P[d.oz],m=p?p.menge:1,b=p?Math.round(p.ep*m*100)/100:0;if(!p)fehlt++;
+    const x=pos[d.oz]=pos[d.oz]||{oz:d.oz,txt:p?p.txt:"(kein Preis hinterlegt)",eh:p?p.eh:"",ep:p?p.ep:0,anz:0,menge:0,betrag:0};x.anz++;x.menge+=m;x.betrag+=b;
+    const y=firma(d.firma||"ohne Firma");d.nr===1?y.fein++:y.nach++;y.betrag+=b;y.liste.push(fName(F(d.fid))+" ("+(d.nr===1?"F":"N"+(d.nr-1))+")")});
+  st.forEach(s=>{firma(s.firma||"ohne Firma").std+=s.pers*s.std});
+  const rows=Object.values(pos).sort((a,b)=>ozSort(a.oz,b.oz)),summe=Math.round(rows.reduce((s,r)=>s+r.betrag,0)*100)/100,nl=Math.round(summe*(D.nachlass||0))/100;
+  return{rows,summe,nl,netto:Math.round((summe-nl)*100)/100,fi,fehlt}}
+function abrechnungKarte(dg,st){
+  if(!D.preise||!Object.keys(D.preise).length)return `<div class="card"><h2>Abrechnung mit Vertragspreisen</h2><p class="meta">${PROBE?"Im Probebetrieb sind keine Preise hinterlegt.":"Keine Preise geladen."}</p></div>`;
+  const a=abrechnung(dg,st);
+  return `<div class="card"><h2>Abrechnung mit Vertragspreisen</h2><p class="meta">Nur für Büro und Admin sichtbar, Bauleiter und Teams sehen keine Preise. Preise aus der Kurzbeauftragung vom 28.09.2026 (Preisvereinbarung 14.09.2026). Enthalten sind dieselben Einträge wie im Nachweis oben.</p>
+  <div class="scroll"><table><tr><th>OZ</th><th>Leistung</th><th>Anz.</th><th>Menge</th><th>EP</th><th>Betrag</th></tr>
+  ${a.rows.map(r=>`<tr><td>${r.oz}</td><td>${esc(r.txt)}</td><td>${r.anz}</td><td>${fz(+r.menge.toFixed(2))} ${esc(r.eh)}</td><td>${eur(r.ep)}</td><td style="text-align:right">${eur(r.betrag)}</td></tr>`).join("")||`<tr><td colspan="6" class="empty">Nichts abzurechnen.</td></tr>`}
+  <tr><td colspan="5"><b>Summe</b></td><td style="text-align:right"><b>${eur(a.summe)}</b></td></tr>
+  <tr><td colspan="5">abzgl. Nachlass ${fz(D.nachlass||0)} %</td><td style="text-align:right">− ${eur(a.nl)}</td></tr>
+  <tr><td colspan="5"><b>Netto</b> (Steuerschuldnerschaft des Leistungsempfängers, § 13b UStG)</td><td style="text-align:right"><b>${eur(a.netto)}</b></td></tr></table></div>
+  ${a.fehlt?`<p class="meta" style="color:var(--red)">${a.fehlt} Einträge ohne hinterlegten Preis, bitte prüfen.</p>`:""}
+  ${st.length?`<p class="meta">Stundenarbeiten haben im Vertrag keinen Preis. Abrechenbar nur mit vorheriger Stundenlohnabrede (ZVB Ziff. 8).</p>`:""}
+  <h3>Wer hat was gemacht</h3><div class="scroll"><table><tr><th>Firma</th><th>Fein</th><th>Nach</th><th>Wert vor Nachlass</th><th>Std.</th></tr>
+  ${Object.entries(a.fi).sort().map(([f,y])=>`<tr><td>${esc(f)}${y.liste.length?`<details><summary class="meta">${y.liste.length} Flächen</summary><div class="meta">${y.liste.map(esc).join(", ")}</div></details>`:""}</td><td>${y.fein}</td><td>${y.nach}</td><td style="text-align:right">${eur(y.betrag)}</td><td>${fz(+y.std.toFixed(2))}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">–</td></tr>`}</table></div>
+  <button class="btn sec" style="margin-top:8px" onclick="abrCsv()">Als Excel-Datei (CSV)</button></div>`}
+function abrCsv(){const {dg,st}=nachweisDaten(),a=abrechnung(dg,st),z=[["OZ","Leistung","Anzahl","Menge","Einheit","EP","Betrag"]];
+  a.rows.forEach(r=>z.push([r.oz,r.txt,r.anz,fz(+r.menge.toFixed(2)),r.eh,fz(r.ep.toFixed(2)),fz(r.betrag.toFixed(2))]));
+  z.push(["","Summe","","","","",fz(a.summe.toFixed(2))],["","Nachlass "+fz(D.nachlass||0)+" %","","","","","-"+fz(a.nl.toFixed(2))],["","Netto","","","","",fz(a.netto.toFixed(2))],[],["Firma","Feinreinigungen","Nachreinigungen","Wert vor Nachlass","Stunden","Flaechen"]);
+  Object.entries(a.fi).sort().forEach(([f,y])=>z.push([f,y.fein,y.nach,fz(y.betrag.toFixed(2)),fz(+y.std.toFixed(2)),y.liste.join(", ")]));
+  const b=new Blob(["﻿"+z.map(r=>r.map(c=>'"'+String(c??"").replace(/"/g,'""')+'"').join(";")).join("\r\n")],{type:"text/csv"});
+  const l=document.createElement("a");l.href=URL.createObjectURL(b);l.download=dateiName().replace("Leistungsnachweis","Abrechnung")+".csv";l.click()}
 function korrRe(){const neu=$("#rneu").value.trim(),n=rechnungAendern(NWRE,neu,$("#rgr").value.trim());if(n){NWRE=neu;render();toast(n+" Einträge korrigiert")}}
 function tueAbrechnen(){const {dg,st}=nachweisDaten();const nr=$("#rnr").value.trim();
   if(!confirm("Alle "+(dg.length+st.length)+" Einträge mit Rechnung "+nr+" markieren?"))return;const n=abrechnen([...dg,...st].map(x=>x.id),nr);if(n){toast(n+" abgerechnet");render()}}
@@ -399,9 +431,7 @@ const NAMEN={bauleiter:"Bauleiter (Probe)",team:"ACS-Team (Probe)",buero:"ACS-B�
 function renderLogin(){$("#app").innerHTML=`<div class="login card"><img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>
   <p class="meta">Die App von ACS All Clean Service KG für Baustellen-Reinigung.</p>
   <h3 style="text-align:left">Projekt wählen</h3>
-  <button class="btn full" onclick="rolle('bauleiter')">FOUR RT2 · Wohnungen 34.–46. OG</button>
-  <button class="btn full sec" disabled>Hotel (folgt)</button>
-  <p class="meta" style="margin-top:12px">Probebetrieb: nichts wird gespeichert. Neu laden = alles wieder leer. Im Echtbetrieb meldet sich jeder mit seiner E-Mail an und sieht nur seine Projekte.</p></div>`}
+  <button class="btn full" onclick="rolle('bauleiter')">FOUR RT2 · Wohnungen 34.–46. OG</button>  <p class="meta" style="margin-top:12px">Probebetrieb: nichts wird gespeichert. Neu laden = alles wieder leer. Im Echtbetrieb meldet sich jeder mit seiner E-Mail an und sieht nur seine Projekte.</p></div>`}
 function rolle(r){U={name:NAMEN[r],rolle:r};SEL.clear();render()}
 function abmelden(){U=null;VIEW="uebersicht";render()}
 </script>
@@ -446,14 +476,17 @@ window.nwUnterschreiben=function(){if(PROBE)return L.nwUnterschreiben();const {d
 /* ---- Daten laden ---- */
 async function alle(tab,sel){let out=[],von=0;for(;;){const {data,error}=await SB.from(tab).select(sel||"*").eq("projekt_id",PID).range(von,von+999);if(error)throw error;out=out.concat(data);if(data.length<1000)return out;von+=1000}}
 async function neuLaden(){if(PROBE||!PID||LADEN)return;LADEN=true;try{
-  const [fl,dg,st,ev,sg]=await Promise.all([alle("flaechen"),alle("durchgaenge"),alle("stunden"),alle("ereignisse"),alle("nachweis_unterschriften")]);
+  const preisRolle=["buero","admin"].includes(U&&U.rolle);
+  const [fl,dg,st,ev,sg,pr,ko]=await Promise.all([alle("flaechen"),alle("durchgaenge"),alle("stunden"),alle("ereignisse"),alle("nachweis_unterschriften"),
+    preisRolle?alle("preise").catch(()=>[]):[],preisRolle?alle("konditionen").catch(()=>[]):[]]);
+  D.preise={};pr.forEach(p=>D.preise[p.oz]={txt:p.kurztext,eh:p.einheit,ep:+p.ep,menge:+p.menge_je_flaeche});D.nachlass=ko[0]?+ko[0].nachlass_prozent:0;
   const evDg={},evSt={};ev.sort((a,b)=>a.zeit.localeCompare(b.zeit)).forEach(e=>{const x={dg:e.durchgang_id,typ:e.typ,zeit:e.zeit,von:e.user_name,text:e.text||""};if(e.durchgang_id)(evDg[e.durchgang_id]=evDg[e.durchgang_id]||[]).push(x);else(evSt[e.stunden_id]=evSt[e.stunden_id]||[]).push(x)});
   D.fl=fl.filter(f=>f.aktiv).sort((a,b)=>a.sortierung-b.sortierung).map(f=>({id:f.id,typ:f.typ,etage:f.etage,nummer:f.nummer,name:f.name,zi:f.zimmer,qm:f.qm!=null?+f.qm:null,zusatz:f.zusatz,ozF:f.oz_fein,ozN:f.oz_nach}));
-  D.dg=dg.map(d=>({id:d.id,fid:d.flaeche_id,nr:d.nr,oz:d.oz,status:d.status,bis:d.bis,bem:d.bemerkung||"",an_am:d.an_am,an_von:d.an_von_name,ge_am:d.ge_am,ge_von:d.ge_von_name,gp_am:d.gp_am,gp_von:d.gp_von_name,
+  D.dg=dg.map(d=>({id:d.id,fid:d.flaeche_id,nr:d.nr,oz:d.oz,status:d.status,bis:d.bis,bem:d.bemerkung||"",an_am:d.an_am,an_von:d.an_von_name,ge_am:d.ge_am,ge_von:d.ge_von_name,gp_am:d.gp_am,gp_von:d.gp_von_name,firma:d.ge_firma||"",
     nach:d.nachgetragen?1:0,nach_von:d.nach_von_name,nach_am:d.nach_am,rechnung:d.rechnung||undefined,re_am:d.re_am,re_von:d.re_von_name}));
   D.ev=Object.values(evDg).flat();
   D.std=st.map(s=>({id:s.id,datum:s.datum,etage:s.etage,was:s.was,status:s.status,muendlich:s.muendlich,an_am:s.an_am,an_von:s.an_von_name,pers:s.pers,std:s.std!=null?+s.std:null,notiz:s.notiz||"",
-    ei_am:s.ei_am,ei_von:s.ei_von_name,be_am:s.be_am,be_von:s.be_von_name,sig:s.unterschrift,zg_grund:s.zg_grund,rechnung:s.rechnung||undefined,re_am:s.re_am,ev:evSt[s.id]||[]}));
+    ei_am:s.ei_am,ei_von:s.ei_von_name,firma:s.ei_firma||"",be_am:s.be_am,be_von:s.be_von_name,sig:s.unterschrift,zg_grund:s.zg_grund,rechnung:s.rechnung||undefined,re_am:s.re_am,ev:evSt[s.id]||[]}));
   D.sig={};sg.forEach(x=>D.sig[x.schluessel]={name:x.name,zeit:x.zeit,img:x.bild});
   if(!$("#sheet").classList.contains("on")&&!(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)))render();
  }catch(e){toast("Daten konnten nicht geladen werden: "+(e.message||e))}finally{LADEN=false}}
@@ -506,14 +539,20 @@ function probeStart(){PROBE=true;L.laden();L.renderLogin()}
 /* ---- Admin: Zugänge ---- */
 async function vZugaenge(){const m=$("#m");if(U.rolle!=="admin"){m.innerHTML="";return}
   m.innerHTML=`<div class="card"><h2>Einladungslink erstellen</h2><p class="meta">Den Link per WhatsApp oder E-Mail schicken. Wer ihn öffnet, meldet sich mit seiner E-Mail an und bekommt die gewählte Rolle in ${esc(PROJ.kurz)}.</p>
-   <div class="f"><label>Rolle</label><select id="zr"><option value="bauleiter">Bauleiter</option><option value="team">ACS-Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
+   <div class="f"><label>Rolle</label><select id="zr" onchange="$('#zfw').style.display=this.value==='bauleiter'?'none':'block'"><option value="bauleiter">Bauleiter</option><option value="team">ACS-Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
+   <div class="f" id="zfw" style="display:none"><label>Firma (beim Team Pflicht, z. B. ACS oder Name des Nachunternehmers)</label><input id="zf" list="zfl" placeholder="z. B. ACS"><datalist id="zfl"></datalist>
+   <div class="meta">Jede Firma bekommt ihren eigenen Link. Wer über diesen Link kommt, gehört fest zu dieser Firma. So steht bei jeder Reinigung, welche Firma sie gemacht hat.</div></div>
    <div class="row"><div class="f" style="flex:1"><label>Gültig (Tage)</label><select id="zt"><option>3</option><option>7</option><option selected>14</option><option>30</option></select></div><div class="f" style="flex:1"><label>Für wie viele Personen</label><select id="zm"><option>1</option><option>3</option><option selected>5</option><option>10</option></select></div></div>
    <button class="btn full" onclick="einladungErstellen()">Link erstellen</button><div id="zl"></div></div><div class="card"><h2>Mitglieder</h2><div id="zml"><p class="empty">Lade …</p></div></div>`;
+  SB.rpc("fn_firmen",{p_projekt:PID}).then(({data})=>{if(data&&$("#zfl"))$("#zfl").innerHTML=data.map(f=>`<option value="${esc(typeof f==="string"?f:Object.values(f)[0])}">`).join("")});
   const {data,error}=await SB.rpc("fn_mitglieder",{p_projekt:PID});if(error){$("#zml").innerHTML=esc(error.message);return}
   $("#zml").innerHTML=data.map(x=>`<div class="task" style="${x.aktiv?"":"opacity:.5"}"><div class="h"><span>${esc(x.name)}</span><span class="pill p-blue">${ROLLEN[x.rolle]||x.rolle}</span></div><div class="meta">${esc(x.email)}${x.firma?" · "+esc(x.firma):""} · seit ${dt(x.seit)}${x.aktiv?"":" · gesperrt"}</div>
-    ${x.email&&x.rolle!=="admin"?`<button class="btn ${x.aktiv?"red":"sec"}" style="margin-top:6px" onclick="mitgliedAktiv('${x.user_id}',${!x.aktiv})">${x.aktiv?"Zugang sperren":"Wieder freigeben"}</button>`:""}</div>`).join("")}
-async function einladungErstellen(){const {data,error}=await SB.rpc("fn_einladung_erstellen",{p_projekt:PID,p_rolle:$("#zr").value,p_tage:+$("#zt").value,p_max:+$("#zm").value});if(error)return toast(error.message);
-  const link=location.origin+location.pathname+"?e="+data,txt=`Einladung ACS Reinigungsnachweis (${PROJ.kurz}, ${ROLLEN[$("#zr").value]}): ${link}`;
+    <div class="row" style="margin-top:6px">${x.email&&x.rolle!=="admin"?`<button class="btn ${x.aktiv?"red":"sec"}" onclick="mitgliedAktiv('${x.user_id}',${!x.aktiv})">${x.aktiv?"Zugang sperren":"Wieder freigeben"}</button>`:""}${x.rolle!=="bauleiter"?`<button class="btn sec" onclick="mitgliedFirma('${x.user_id}','${esc(x.firma||"").replace(/'/g,"")}')">Firma ${x.firma?"ändern":"eintragen"}</button>`:""}</div></div>`).join("")}
+async function mitgliedFirma(uid,alt){const f=prompt("Firma (gilt für künftige Meldungen; bisherige bleiben unverändert):",alt);if(f===null)return;
+  const {error}=await SB.rpc("fn_mitglied_firma",{p_projekt:PID,p_user:uid,p_firma:f.trim()});if(error)return toast(error.message);toast("Firma gespeichert");vZugaenge()}
+async function einladungErstellen(){const r=$("#zr").value,fi=r==="bauleiter"?"":$("#zf").value.trim();if(r==="team"&&fi.length<2)return toast("Bitte die Firma angeben");
+  const {data,error}=await SB.rpc("fn_einladung_erstellen",{p_projekt:PID,p_rolle:r,p_tage:+$("#zt").value,p_max:+$("#zm").value,p_firma:fi||null});if(error)return toast(error.message);
+  const link=location.origin+location.pathname+"?e="+data,txt=`Einladung ACS Reinigungsnachweis (${PROJ.kurz}, ${ROLLEN[r]}${fi?", "+fi:""}): ${link}`;
   $("#zl").innerHTML=`<div class="task" style="margin-top:10px"><b>Link (gültig ${$("#zt").value} Tage):</b><div class="meta" style="word-break:break-all">${esc(link)}</div>
    <div class="row" style="margin-top:8px"><a class="btn ok" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn sec" href="mailto:?subject=${encodeURIComponent("Einladung ACS Reinigungsnachweis")}&body=${encodeURIComponent(txt)}">E-Mail</a><button class="btn sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('${link}').then(()=>toast('Kopiert'))">Kopieren</button></div></div>`}
 async function mitgliedAktiv(uid,a){if(!confirm(a?"Zugang wieder freigeben?":"Zugang sperren? Die Person kann dann nichts mehr sehen."))return;const {error}=await SB.rpc("fn_mitglied_aktiv",{p_projekt:PID,p_user:uid,p_aktiv:a});if(error)return toast(error.message);vZugaenge()}
