@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v7</title>
+<title>ACS Reinigungsnachweis v8</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -224,8 +224,8 @@ function render(){
   if(darf("buero")||U.rolle==="bauleiter")tabs.push(["nachweis","📄","Nachweis"]);
   if(typeof PROBE!=="undefined"&&!PROBE&&U.rolle==="admin")tabs.push(["zugaenge","👥","Zugänge"]);
   let h=`<header><div class="lg"><img src="${LOGO}" alt="ACS"></div><div class="t"><b>ACS Reinigungsnachweis</b><small>${PROJ.kurz} · ${esc(U.name)}</small></div><button onclick="abmelden()">Projekte</button></header>
-  ${typeof PROBE!=="undefined"&&!PROBE?"":`<div class="demo"><b>Probebetrieb</b>, nichts wird gespeichert. Ich bin gerade:
-  <div class="seg" style="margin-top:5px">\${["bauleiter","team","buero","admin"].map(r=>\`<button class="\${U.rolle===r?"on":""}" onclick="rolle('\${r}')">\${ROLLEN[r]}</button>\`).join("")}</div></div>`}<main id="m"></main>
+  ${typeof PROBE!=="undefined"&&!PROBE?"":`<div class="demo" style="border:2px solid var(--red)"><b style="color:var(--red)">PROBEBETRIEB – Sie sind nicht angemeldet. Nichts wird gespeichert, niemand sieht Ihre Eingaben.</b> <button class="btn sec" style="padding:4px 10px" onclick="abmelden()">Zur Anmeldung</button><br>Zum Ausprobieren bin ich gerade:
+  <div class="seg" style="margin-top:5px">${["bauleiter","team","buero","admin"].map(r=>`<button class="${U.rolle===r?"on":""}" onclick="rolle('${r}')">${ROLLEN[r]}</button>`).join("")}</div></div>`}<main id="m"></main>
   <nav>${tabs.map(t=>`<button class="${VIEW===t[0]?"on":""}" onclick="gehe('${t[0]}')"><span>${t[1]}</span>${t[2]}${t[0]==="aufgaben"&&zahlAufgaben()?" ("+zahlAufgaben()+")":""}</button>`).join("")}</nav>`;
   $("#app").innerHTML=h;
   ({uebersicht:vUebersicht,etage:vEtage,aufgaben:vAufgaben,stunden:vStunden,nachweis:vNachweis,zugaenge:()=>vZugaenge()})[VIEW]();
@@ -430,12 +430,15 @@ function csv(){const {dg,st}=nachweisDaten();const z=[["OZ","Flaeche","Art","ang
 const NAMEN={bauleiter:"Bauleiter (Probe)",team:"ACS-Team (Probe)",buero:"ACS-Büro (Probe)",admin:"Romano (Admin, Probe)"};
 function renderLogin(){$("#app").innerHTML=`<div class="login card"><img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>
   <p class="meta">Die App von ACS All Clean Service KG für Baustellen-Reinigung.</p>
-  <h3 style="text-align:left">Projekt wählen</h3>
-  <button class="btn full" onclick="rolle('bauleiter')">FOUR RT2 · Wohnungen 34.–46. OG</button>  <p class="meta" style="margin-top:12px">Probebetrieb: nichts wird gespeichert. Neu laden = alles wieder leer. Im Echtbetrieb meldet sich jeder mit seiner E-Mail an und sieht nur seine Projekte.</p></div>`}
+  <p class="pill p-red" style="white-space:normal">PROBEBETRIEB – Sie sind nicht angemeldet</p>
+  <h3 style="text-align:left">Zum Ausprobieren</h3>
+  <button class="btn full sec" onclick="rolle('bauleiter')">Probe starten: FOUR RT2 · Wohnungen 34.–46. OG</button>
+  <button class="btn full" style="margin-top:10px" onclick="abmelden()">Zur echten Anmeldung</button>  <p class="meta" style="margin-top:12px">Probebetrieb: nichts wird gespeichert. Neu laden = alles wieder leer. Im Echtbetrieb meldet sich jeder mit seiner E-Mail an und sieht nur seine Projekte.</p></div>`}
 function rolle(r){U={name:NAMEN[r],rolle:r};SEL.clear();render()}
 function abmelden(){U=null;VIEW="uebersicht";render()}
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<!-- Supabase-Bibliothek liegt als eigene Datei NEBEN der index.html (vorher von fremdem Server geladen; wurde sie dort blockiert, lief die App unbemerkt im Probebetrieb). Beide Dateien gehören auf GitHub. -->
+<script src="supabase-2.45.4.min.js"></script>
 <script>
 /* ===== Echtbetrieb: Anmeldung und Daten über Supabase =====
    Die Regeln der App bleiben wie im Probebetrieb. Jede Aktion läuft zuerst lokal
@@ -505,7 +508,8 @@ let LOGIN_MAIL=(()=>{try{const [m,t]=(localStorage.getItem(MAIL_KEY)||"").split(
 window.renderLogin=async function(){if(PROBE)return L.renderLogin();
   const {data:{session}}=await SB.auth.getSession();
   const kopf=`<img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>`;
-  const probe=`<button class="btn full sec" style="margin-top:18px" onclick="probeStart()">Probebetrieb ausprobieren (nichts wird gespeichert)</button>`;
+  /* Probebetrieb nur als unauffälliger Link, und gar nicht, wenn eine Einladung vorliegt: sonst landen Eingeladene versehentlich in der Probe */
+  const probe=einladung()?"":`<p class="meta" style="margin-top:22px"><a href="#" onclick="probeStart();return false">Nur ansehen ohne Anmeldung (Probebetrieb, nichts wird gespeichert)</a></p>`;
   if(!session){$("#app").innerHTML=`<div class="login card">${kopf}<p class="meta">Anmelden mit Ihrer E-Mail. Sie bekommen einen Code per E-Mail, kein Passwort nötig.</p>
     ${einladung()?`<p class="pill p-blue">Einladung erkannt. Nach der Anmeldung tragen Sie Ihren Namen ein.</p>`:""}
     <div class="f" style="text-align:left"><label>E-Mail</label><input id="lm" type="email" inputmode="email" autocomplete="email" value="${esc(LOGIN_MAIL)}"></div>
@@ -576,7 +580,8 @@ async function mitgliedAktiv(uid,a){if(!confirm(a?"Zugang wieder freigeben?":"Zu
 
 /* ---- Start ---- */
 (async function(){einladungMerken();
-  if(!window.supabase){PROBE=true;L.laden();return L.renderLogin()}
+  /* Nie stillschweigend in den Probebetrieb fallen: sonst arbeitet jemand, ohne dass etwas gespeichert wird */
+  if(!window.supabase){$("#app").innerHTML=`<div class="login card"><h2>ACS Reinigungsnachweis</h2><p class="pill p-red" style="white-space:normal">Die Anmeldung konnte nicht geladen werden.</p><p class="meta">Bitte Seite neu laden. Hilft das nicht: anderen Browser nehmen oder VPN/Werbeblocker für diese Seite ausschalten.</p><button class="btn full" onclick="location.reload()">Neu laden</button></div>`;return}
   SB=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:"implicit"}});
   SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!U&&!$("#en"))renderLogin()});
   D={dg:[],ev:[],std:[],fl:[],sig:{},seq:1};renderLogin()})();
