@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v6</title>
+<title>ACS Reinigungsnachweis v7</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -298,7 +298,7 @@ function tueAnfordern(){const n=anfordern([...SEL].filter(id=>!offen(id)),$("#bi
 function tuePruefen(){const ids=[...SEL].map(offen).filter(o=>o&&o.status==="gereinigt").map(o=>o.id);const n=pruefen(ids);if(n){SEL.clear();toast(n+" geprüft");render()}}
 function tueGereinigt(){let n=0;[...SEL].map(offen).filter(o=>o&&o.status==="angefordert").forEach(o=>n+=gereinigt(o.id)||0);if(n){SEL.clear();toast(n+" als gereinigt gemeldet");render()}}
 const EVT={nachgetragen:"nachgetragen (schon gereinigt)",gereinigt_zurueck:"„Gereinigt“ von ACS zurückgenommen",bis_geaendert:"Datum „bis“ geändert",rechnung_korrigiert:"Rechnungsnummer korrigiert",angefordert:"angefordert",gereinigt:"gereinigt",geprueft:"geprüft",nicht_ok:"nicht in Ordnung, zurück an ACS",pruefung_zurueck:"Prüfung zurückgenommen",storniert:"Anforderung zurückgenommen",abgerechnet:"abgerechnet"};
-function verlauf(fid){const f=F(fid),l=D.dg.filter(d=>d.fid===fid).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+function verlauf(fid){const f=F(fid),l=D.dg.filter(d=>d.fid===fid).sort((a,b)=>String(a.an_am||"").localeCompare(String(b.an_am||""))||a.nr-b.nr);
   let h=`<h2>Verlauf ${esc(fName(f))}</h2><p class="meta">${f.typ==="Wohnung"?`${f.zi}-Zi · ca. ${f.qm} m²${f.zusatz?" · "+esc(f.zusatz):""} · `:""}OZ Fein ${f.ozF} · Nach ${f.ozN}</p>`;
   if(!l.length)h+=`<p class="empty">Noch nichts angefordert.</p>`;
   l.forEach(d=>{const st=d.status==="storniert"?`<span class="pill p-gr">zurückgenommen</span>`:d.rechnung?`<span class="pill p-ok">abgerechnet RE ${esc(d.rechnung)}</span>`:d.status==="geprueft"?`<span class="pill p-ok">frei zum Abrechnen</span>`:`<span class="pill p-blue">offen</span>`;
@@ -408,7 +408,7 @@ function abrCsv(){const {dg,st}=nachweisDaten(),a=abrechnung(dg,st),z=[["OZ","Le
   const b=new Blob(["﻿"+z.map(r=>r.map(c=>'"'+String(c??"").replace(/"/g,'""')+'"').join(";")).join("\r\n")],{type:"text/csv"});
   const l=document.createElement("a");l.href=URL.createObjectURL(b);l.download=dateiName().replace("Leistungsnachweis","Abrechnung")+".csv";l.click()}
 function korrRe(){const neu=$("#rneu").value.trim(),n=rechnungAendern(NWRE,neu,$("#rgr").value.trim());if(n){NWRE=neu;render();toast(n+" Einträge korrigiert")}}
-function tueAbrechnen(){const {dg,st}=nachweisDaten();const nr=$("#rnr").value.trim();
+function tueAbrechnen(){const {dg,st}=nachweisDaten();const nr=$("#rnr").value.trim();if(!nr)return fehler("Rechnungsnummer fehlt.");
   if(!confirm("Alle "+(dg.length+st.length)+" Einträge mit Rechnung "+nr+" markieren?"))return;const n=abrechnen([...dg,...st].map(x=>x.id),nr);if(n){toast(n+" abgerechnet");render()}}
 function dateiName(){return("Leistungsnachweis_FOUR_RT2_"+(NWRE?"RE_"+NWRE:MON)).replace(/[^A-Za-z0-9_-]/g,"_")}
 function drucken(){const {dg,st}=nachweisDaten();
@@ -495,9 +495,13 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)neuLaden()
 
 /* ---- Anmeldung ---- */
 const EINL_KEY="acs_rn_einladung";
-function einladungMerken(){const c=new URLSearchParams(location.search).get("e");if(c){try{localStorage.setItem(EINL_KEY,c)}catch(e){}history.replaceState(null,"",location.pathname)}}
-function einladung(){try{return localStorage.getItem(EINL_KEY)}catch(e){return null}}
-let LOGIN_MAIL="";
+let EINL_FRISCH=false;
+function einladungMerken(){const c=new URLSearchParams(location.search).get("e");if(c){try{localStorage.setItem(EINL_KEY,c+"|"+Date.now())}catch(e){}EINL_FRISCH=true;history.replaceState(null,"",location.pathname)}}
+/* Einladung bleibt höchstens 3 Tage auf dem Gerät gemerkt */
+function einladung(){try{const v=localStorage.getItem(EINL_KEY);if(!v)return null;const [c,t]=v.split("|");if(t&&Date.now()-(+t)>3*864e5){localStorage.removeItem(EINL_KEY);return null}return c}catch(e){return null}}
+/* E-Mail 15 Minuten merken: Wer zum Code-Lesen ins Mailprogramm wechselt und zurückkommt, sieht das Code-Feld noch */
+const MAIL_KEY="acs_rn_mail";
+let LOGIN_MAIL=(()=>{try{const [m,t]=(localStorage.getItem(MAIL_KEY)||"").split("|");return m&&Date.now()-(+t)<9e5?m:""}catch(e){return""}})();
 window.renderLogin=async function(){if(PROBE)return L.renderLogin();
   const {data:{session}}=await SB.auth.getSession();
   const kopf=`<img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>`;
@@ -520,9 +524,9 @@ window.renderLogin=async function(){if(PROBE)return L.renderLogin();
   window._pr=pr;if(pr.length===1&&!window._gewaehlt)projektOeffnen(0)};
 async function codeSenden(){const m=$("#lm").value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))return toast("Bitte E-Mail prüfen");
   const {error}=await SB.auth.signInWithOtp({email:m,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}});
-  if(error)return toast(error.message);LOGIN_MAIL=m;toast("Code ist unterwegs. Bitte Postfach prüfen (auch Spam).");$("#codefeld").style.display="block";$("#lc").focus()}
+  if(error)return toast(error.message);LOGIN_MAIL=m;try{localStorage.setItem(MAIL_KEY,m+"|"+Date.now())}catch(e){}toast("Code ist unterwegs. Bitte Postfach prüfen (auch Spam).");$("#codefeld").style.display="block";$("#lc").focus()}
 async function codePruefen(){const t=$("#lc").value.replace(/\D/g,"");if(t.length<6)return toast("Bitte den Code aus der E-Mail eingeben");
-  const {error}=await SB.auth.verifyOtp({email:LOGIN_MAIL,token:t,type:"email"});if(error)return toast("Code falsch oder abgelaufen");renderLogin()}
+  const {error}=await SB.auth.verifyOtp({email:LOGIN_MAIL,token:t,type:"email"});if(error)return toast("Code falsch oder abgelaufen");LOGIN_MAIL="";try{localStorage.removeItem(MAIL_KEY)}catch(e){}renderLogin()}
 async function einloesen(){const n=$("#en").value.trim(),f=$("#ef").value.trim();if(n.length<3)return toast("Bitte Vor- und Nachnamen");
   const {error}=await SB.rpc("fn_einladung_einloesen",{p_code:einladung(),p_name:n,p_firma:f||null});if(error)return toast(error.message);
   try{localStorage.removeItem(EINL_KEY)}catch(e){}renderLogin()}
@@ -530,9 +534,16 @@ async function projektOeffnen(i){const p=window._pr[i];window._gewaehlt=1;PID=p.
   Object.assign(PROJ,{kurz:p.kurzname,lang:p.bezeichnung,ag:p.auftraggeber||"",auftrag:p.auftrag_nr||"",projekt:p.projekt_nr||""});
   U={name:p.name,rolle:p.rolle};VIEW="uebersicht";D={dg:[],ev:[],std:[],fl:[],sig:{},seq:1};$("#app").innerHTML=`<p class="empty">Lade Daten …</p>`;
   await neuLaden();render();
-  if(einladung())SB.rpc("fn_einladung_einloesen",{p_code:einladung(),p_name:p.name}).then(()=>{try{localStorage.removeItem(EINL_KEY)}catch(e){}})}
-async function ausloggen(){await SB.auth.signOut();U=null;PID=null;window._gewaehlt=0;renderLogin()}
-window.abmelden=function(){if(PROBE){PROBE=false;U=null;return renderLogin()}U=null;PID=null;window._gewaehlt=0;renderLogin()};
+  /* Einladung auf einem Gerät geöffnet, das schon angemeldet ist: Ist der Angemeldete schon im Projekt,
+     ist die Einladung für jemand anderen gedacht. Dann bleibt sie gemerkt, bis sich diese Person anmeldet. */
+  if(einladung()){const {data,error}=await SB.rpc("fn_einladung_einloesen",{p_code:einladung(),p_name:p.name});
+    const z=data&&data[0],schon=!error&&z&&window._pr.some(x=>x.projekt_id===z.r_projekt_id);
+    if(!schon){try{localStorage.removeItem(EINL_KEY)}catch(e){}}
+    else if(EINL_FRISCH){EINL_FRISCH=false;const {data:{session}}=await SB.auth.getSession();
+      alert("Dieses Gerät ist schon angemeldet als "+p.name+(session?" ("+session.user.email+")":"")+".\n\nIst die Einladung für eine andere Person? Dann oben rechts auf „Projekte“ tippen, „Abmelden“ wählen und mit der E-Mail dieser Person anmelden. Die Einladung bleibt 3 Tage auf diesem Gerät gemerkt.")}}}
+async function ausloggen(){await SB.auth.signOut();LOGIN_MAIL="";try{localStorage.removeItem(MAIL_KEY)}catch(e){}U=null;PID=null;window._gewaehlt=0;renderLogin()}
+/* _gewaehlt bleibt 1: sonst öffnet sich bei nur einem Projekt sofort wieder das Projekt und „Abmelden“ ist nie erreichbar */
+window.abmelden=function(){if(PROBE){PROBE=false;U=null;return renderLogin()}U=null;PID=null;window._gewaehlt=1;renderLogin()};
 window.rolle=function(r){if(!PROBE)return;return L.rolle(r)};
 function probeStart(){PROBE=true;L.laden();L.renderLogin()}
 
@@ -547,7 +558,13 @@ async function vZugaenge(){const m=$("#m");if(U.rolle!=="admin"){m.innerHTML="";
   SB.rpc("fn_firmen",{p_projekt:PID}).then(({data})=>{if(data&&$("#zfl"))$("#zfl").innerHTML=data.map(f=>`<option value="${esc(typeof f==="string"?f:Object.values(f)[0])}">`).join("")});
   const {data,error}=await SB.rpc("fn_mitglieder",{p_projekt:PID});if(error){$("#zml").innerHTML=esc(error.message);return}
   $("#zml").innerHTML=data.map(x=>`<div class="task" style="${x.aktiv?"":"opacity:.5"}"><div class="h"><span>${esc(x.name)}</span><span class="pill p-blue">${ROLLEN[x.rolle]||x.rolle}</span></div><div class="meta">${esc(x.email)}${x.firma?" · "+esc(x.firma):""} · seit ${dt(x.seit)}${x.aktiv?"":" · gesperrt"}</div>
-    <div class="row" style="margin-top:6px">${x.email&&x.rolle!=="admin"?`<button class="btn ${x.aktiv?"red":"sec"}" onclick="mitgliedAktiv('${x.user_id}',${!x.aktiv})">${x.aktiv?"Zugang sperren":"Wieder freigeben"}</button>`:""}${x.rolle!=="bauleiter"?`<button class="btn sec" onclick="mitgliedFirma('${x.user_id}','${esc(x.firma||"").replace(/'/g,"")}')">Firma ${x.firma?"ändern":"eintragen"}</button>`:""}</div></div>`).join("")}
+    <div class="row" style="margin-top:6px">${x.email&&x.rolle!=="admin"?`<button class="btn ${x.aktiv?"red":"sec"}" onclick="mitgliedAktiv('${x.user_id}',${!x.aktiv})">${x.aktiv?"Zugang sperren":"Wieder freigeben"}</button><button class="btn sec" onclick="mitgliedRolle('${x.user_id}','${x.rolle}')">Rolle ändern</button>`:""}${x.rolle!=="bauleiter"?`<button class="btn sec" onclick="mitgliedFirma('${x.user_id}','${esc(x.firma||"").replace(/'/g,"")}')">Firma ${x.firma?"ändern":"eintragen"}</button>`:""}</div></div>`).join("")}
+async function mitgliedRolle(uid,alt){const k=["bauleiter","team","buero","admin"];
+  const w=prompt("Neue Rolle (bisher: "+ROLLEN[alt]+")\n\n1 = Bauleiter\n2 = ACS-Team\n3 = ACS-Büro\n4 = Admin\n\nBitte die Zahl eingeben:");if(w===null)return;
+  const r=k[+w.trim()-1];if(!r)return toast("Bitte 1, 2, 3 oder 4 eingeben");if(r===alt)return toast("Das ist schon die Rolle");
+  if(r==="admin"&&!confirm("Admin darf alles, auch Zugänge verwalten und Preise sehen. Wirklich zum Admin machen?"))return;
+  const {error}=await SB.rpc("fn_mitglied_rolle",{p_projekt:PID,p_user:uid,p_rolle:r});
+  if(error)return toast(/fn_mitglied_rolle|schema cache/i.test(error.message)?"Rolle ändern ist in der Datenbank noch nicht eingerichtet (Datei 05 fehlt)":error.message);toast("Rolle geändert: "+ROLLEN[r]);vZugaenge()}
 async function mitgliedFirma(uid,alt){const f=prompt("Firma (gilt für künftige Meldungen; bisherige bleiben unverändert):",alt);if(f===null)return;
   const {error}=await SB.rpc("fn_mitglied_firma",{p_projekt:PID,p_user:uid,p_firma:f.trim()});if(error)return toast(error.message);toast("Firma gespeichert");vZugaenge()}
 async function einladungErstellen(){const r=$("#zr").value,fi=r==="bauleiter"?"":$("#zf").value.trim();if(r==="team"&&fi.length<2)return toast("Bitte die Firma angeben");
@@ -561,7 +578,7 @@ async function mitgliedAktiv(uid,a){if(!confirm(a?"Zugang wieder freigeben?":"Zu
 (async function(){einladungMerken();
   if(!window.supabase){PROBE=true;L.laden();return L.renderLogin()}
   SB=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:"implicit"}});
-  SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!U)renderLogin()});
+  SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!U&&!$("#en"))renderLogin()});
   D={dg:[],ev:[],std:[],fl:[],sig:{},seq:1};renderLogin()})();
 
 </script></body></html>
