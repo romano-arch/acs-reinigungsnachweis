@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v8</title>
+<title>ACS Reinigungsnachweis v9</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -554,11 +554,14 @@ function probeStart(){PROBE=true;L.laden();L.renderLogin()}
 /* ---- Admin: Zugänge ---- */
 async function vZugaenge(){const m=$("#m");if(U.rolle!=="admin"){m.innerHTML="";return}
   m.innerHTML=`<div class="card"><h2>Einladungslink erstellen</h2><p class="meta">Den Link per WhatsApp oder E-Mail schicken. Wer ihn öffnet, meldet sich mit seiner E-Mail an und bekommt die gewählte Rolle in ${esc(PROJ.kurz)}.</p>
-   <div class="f"><label>Rolle</label><select id="zr" onchange="$('#zfw').style.display=this.value==='bauleiter'?'none':'block'"><option value="bauleiter">Bauleiter</option><option value="team">ACS-Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
-   <div class="f" id="zfw" style="display:none"><label>Firma (beim Team Pflicht, z. B. ACS oder Name des Nachunternehmers)</label><input id="zf" list="zfl" placeholder="z. B. ACS"><datalist id="zfl"></datalist>
+   <div class="f"><label>1. Rolle *</label><select id="zr" onchange="zRolle()"><option value="">– bitte wählen –</option><option value="bauleiter">Bauleiter</option><option value="team">ACS-Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
+   <div class="f" id="zfw" style="display:none"><label>2. Firma (Name der Firma, keine E-Mail-Adresse)</label><input id="zf" list="zfl" placeholder="z. B. ACS oder Name des Nachunternehmers"><datalist id="zfl"></datalist>
    <div class="meta">Jede Firma bekommt ihren eigenen Link. Wer über diesen Link kommt, gehört fest zu dieser Firma. So steht bei jeder Reinigung, welche Firma sie gemacht hat.</div></div>
+   <div class="f"><label>E-Mail-Adresse der Person (nur für den Knopf „E-Mail“, freiwillig)</label><input id="zmail" type="email" placeholder="z. B. name@firma.de"></div>
    <div class="row"><div class="f" style="flex:1"><label>Gültig (Tage)</label><select id="zt"><option>3</option><option>7</option><option selected>14</option><option>30</option></select></div><div class="f" style="flex:1"><label>Für wie viele Personen</label><select id="zm"><option>1</option><option>3</option><option selected>5</option><option>10</option></select></div></div>
-   <button class="btn full" onclick="einladungErstellen()">Link erstellen</button><div id="zl"></div></div><div class="card"><h2>Mitglieder</h2><div id="zml"><p class="empty">Lade …</p></div></div>`;
+   <button class="btn full" onclick="einladungErstellen()">Link erstellen</button><div id="zl"></div></div><div class="card"><h2>Mitglieder</h2><div id="zml"><p class="empty">Lade …</p></div></div>
+   <div class="card"><h2>Offene Einladungslinks</h2><p class="meta">Links, die noch benutzt werden können. Nicht mehr gebrauchte Links sperren, damit niemand Fremdes damit hereinkommt.</p><div id="zel"><p class="empty">Lade …</p></div></div>`;
+  einladungenZeigen();
   SB.rpc("fn_firmen",{p_projekt:PID}).then(({data})=>{if(data&&$("#zfl"))$("#zfl").innerHTML=data.map(f=>`<option value="${esc(typeof f==="string"?f:Object.values(f)[0])}">`).join("")});
   const {data,error}=await SB.rpc("fn_mitglieder",{p_projekt:PID});if(error){$("#zml").innerHTML=esc(error.message);return}
   $("#zml").innerHTML=data.map(x=>`<div class="task" style="${x.aktiv?"":"opacity:.5"}"><div class="h"><span>${esc(x.name)}</span><span class="pill p-blue">${ROLLEN[x.rolle]||x.rolle}</span></div><div class="meta">${esc(x.email)}${x.firma?" · "+esc(x.firma):""} · seit ${dt(x.seit)}${x.aktiv?"":" · gesperrt"}</div>
@@ -571,11 +574,24 @@ async function mitgliedRolle(uid,alt){const k=["bauleiter","team","buero","admin
   if(error)return toast(/fn_mitglied_rolle|schema cache/i.test(error.message)?"Rolle ändern ist in der Datenbank noch nicht eingerichtet (Datei 05 fehlt)":error.message);toast("Rolle geändert: "+ROLLEN[r]);vZugaenge()}
 async function mitgliedFirma(uid,alt){const f=prompt("Firma (gilt für künftige Meldungen; bisherige bleiben unverändert):",alt);if(f===null)return;
   const {error}=await SB.rpc("fn_mitglied_firma",{p_projekt:PID,p_user:uid,p_firma:f.trim()});if(error)return toast(error.message);toast("Firma gespeichert");vZugaenge()}
-async function einladungErstellen(){const r=$("#zr").value,fi=r==="bauleiter"?"":$("#zf").value.trim();if(r==="team"&&fi.length<2)return toast("Bitte die Firma angeben");
+function zRolle(){const r=$("#zr").value;$("#zfw").style.display=r&&r!=="bauleiter"?"block":"none";if((r==="buero"||r==="admin")&&!$("#zf").value.trim())$("#zf").value="ACS"}
+async function einladungenZeigen(){const el=$("#zel");if(!el)return;
+  const {data,error}=await SB.from("einladungen").select("code,rolle,firma,nutzungen,max_nutzungen,gueltig_bis,erstellt_am").eq("projekt_id",PID).eq("aktiv",true).gt("gueltig_bis",new Date().toISOString()).order("erstellt_am",{ascending:false});
+  if(error){el.innerHTML=esc(error.message);return}const l=(data||[]).filter(e=>e.nutzungen<e.max_nutzungen);
+  el.innerHTML=l.map(e=>`<div class="task"><div class="h"><span>${ROLLEN[e.rolle]||e.rolle}${e.firma?" · "+esc(e.firma):""}</span><span class="pill p-blue">${e.nutzungen} von ${e.max_nutzungen} genutzt</span></div><div class="meta">erstellt ${dtz(e.erstellt_am)} · gültig bis ${dt(e.gueltig_bis)} · …${esc(e.code.slice(-4))}</div><button class="btn red" style="margin-top:6px" onclick="einladungSperren('${e.code}')">Link sperren</button></div>`).join("")||`<p class="empty">Keine offenen Links.</p>`}
+async function einladungSperren(c){if(!confirm("Diesen Link sperren? Wer schon drin ist, bleibt drin. Neue Personen kommen damit nicht mehr herein."))return;
+  const {error}=await SB.rpc("fn_einladung_deaktivieren",{p_code:c});if(error)return toast(error.message);toast("Link gesperrt");einladungenZeigen()}
+async function einladungErstellen(){const r=$("#zr").value;if(!r)return toast("Bitte zuerst die Rolle wählen");
+  const fi=r==="bauleiter"?"":$("#zf").value.trim(),mail=$("#zmail").value.trim();
+  if(fi.includes("@"))return toast("Bei Firma bitte den Firmennamen eintragen, keine E-Mail-Adresse. Die E-Mail gehört ins Feld darunter.");
+  if(r==="team"&&fi.length<2)return toast("Bitte die Firma angeben");
+  if(!confirm("Link erstellen für: "+ROLLEN[r]+(fi?", Firma "+fi:"")+"?\n\nWer den Link öffnet, bekommt genau diese Rolle."))return;
   const {data,error}=await SB.rpc("fn_einladung_erstellen",{p_projekt:PID,p_rolle:r,p_tage:+$("#zt").value,p_max:+$("#zm").value,p_firma:fi||null});if(error)return toast(error.message);
   const link=location.origin+location.pathname+"?e="+data,txt=`Einladung ACS Reinigungsnachweis (${PROJ.kurz}, ${ROLLEN[r]}${fi?", "+fi:""}): ${link}`;
-  $("#zl").innerHTML=`<div class="task" style="margin-top:10px"><b>Link (gültig ${$("#zt").value} Tage):</b><div class="meta" style="word-break:break-all">${esc(link)}</div>
-   <div class="row" style="margin-top:8px"><a class="btn ok" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn sec" href="mailto:?subject=${encodeURIComponent("Einladung ACS Reinigungsnachweis")}&body=${encodeURIComponent(txt)}">E-Mail</a><button class="btn sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('${link}').then(()=>toast('Kopiert'))">Kopieren</button></div></div>`}
+  $("#zl").innerHTML=`<div class="task" style="margin-top:10px"><b style="font-size:16px">Link für: ${ROLLEN[r]}${fi?" · "+esc(fi):""}</b><div class="meta">gültig ${$("#zt").value} Tage, für ${$("#zm").value} Person(en)</div><div class="meta" style="word-break:break-all">${esc(link)}</div>
+   <div class="row" style="margin-top:8px"><a class="btn ok" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn sec" href="mailto:${mail.replace(/[^\w.@+-]/g,"")}?subject=${encodeURIComponent("Einladung ACS Reinigungsnachweis")}&body=${encodeURIComponent(txt)}">E-Mail</a><button class="btn sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('${link}').then(()=>toast('Kopiert'))">Kopieren</button></div>
+   <div class="meta" style="margin-top:6px">„E-Mail“ öffnet nur einen Entwurf in Ihrem Mailprogramm. Dort noch auf Senden drücken. Geht kein Mailprogramm auf: „Kopieren“ und den Link selbst in eine Mail einfügen.</div></div>`;
+  $("#zr").value="";zRolle();$("#zf").value="";$("#zmail").value="";einladungenZeigen()}
 async function mitgliedAktiv(uid,a){if(!confirm(a?"Zugang wieder freigeben?":"Zugang sperren? Die Person kann dann nichts mehr sehen."))return;const {error}=await SB.rpc("fn_mitglied_aktiv",{p_projekt:PID,p_user:uid,p_aktiv:a});if(error)return toast(error.message);vZugaenge()}
 
 /* ---- Start ---- */
