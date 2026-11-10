@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v9</title>
+<title>ACS Reinigungsnachweis v10</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -93,6 +93,8 @@ const nid=()=>"x"+(D.seq++);
 const jetzt=()=>new Date().toISOString();
 const heute=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const F=id=>D.fl.find(f=>f.id===id);
+/* Etagen der geöffneten Baustelle, oben zuerst (nicht fest 34–46, damit jede Baustelle passt) */
+const ETAGEN=()=>[...new Set(D.fl.map(f=>f.etage))].sort((a,b)=>b-a);
 function ev(dg,typ,text){D.ev.push({id:nid(),dg:dg?dg.id:null,typ,zeit:jetzt(),von:U.name,rolle:U.rolle,text:text||""})}
 const dgVon=fid=>D.dg.filter(d=>d.fid===fid&&d.status!=="storniert").sort((a,b)=>a.nr-b.nr);
 const letzter=fid=>{const l=dgVon(fid);return l[l.length-1]||null};
@@ -194,7 +196,7 @@ function formBis(id){const d=findDg(id);sheet(`<h2>Datum „bis“ ändern</h2><
   $("#grok").onclick=()=>{if(bisAendern(id,$("#bis").value,$("#gr").value.trim())){zu();render();toast("Datum geändert")}}}
 function formStd(id){const s=findS(id);sheet(`<h2>Stundenzettel bearbeiten</h2><p class="meta">Die alte Fassung bleibt im Verlauf. Danach geht der Zettel wieder zur Unterschrift an den Bauleiter.</p>
   ${s.zg_grund&&s.status==="zurueckgegeben"?`<p class="pill p-red">Bauleiter: ${esc(s.zg_grund)}</p>`:""}
-  <div class="row"><div class="f" style="flex:1"><label>Ausgeführt am * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se2"><option value="">–</option>${[...Array(13)].map((_,i)=>`<option ${String(46-i)===String(s.etage)?"selected":""}>${46-i}</option>`).join("")}</select></div></div><div id="kal"></div>
+  <div class="row"><div class="f" style="flex:1"><label>Ausgeführt am * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se2"><option value="">–</option>${ETAGEN().map(e=>`<option ${String(e)===String(s.etage)?"selected":""}>${e}</option>`).join("")}</select></div></div><div id="kal"></div>
   <div class="f"><label>Was wurde gemacht? *</label><textarea id="sw2" rows="2">${esc(s.was)}</textarea></div>
   <div class="row"><input style="flex:1" id="sp2" type="number" min="1" placeholder="Personen" value="${s.pers||""}"><input style="flex:1" id="sh2" inputmode="decimal" placeholder="Std. je Person" value="${s.std?fz(s.std):""}"></div>
   <div class="f"><input id="sn2" placeholder="Notiz" value="${esc(s.notiz||"")}"></div><button class="btn full y" id="grok">Speichern, zur Unterschrift</button>`);
@@ -254,7 +256,7 @@ function kachel(f){const d=letzter(f.id),c=farbe(f.id),o=offen(f.id);
   <b>${f.typ==="Wohnung"?f.nummer.split(".")[1]:f.nummer.split(" ")[1]}</b><small>${f.typ==="Wohnung"?f.zi+"-Zi":esc(f.name.split(" ")[0])}</small>${o&&o.bis?`<small>bis ${dd(o.bis).slice(0,6)}</small>`:""}${d&&d.rechnung?`<span class="rb">RE</span>`:""}</div>`}
 function vEtage(){const w=D.fl.filter(f=>f.etage===ETAGE&&f.typ==="Wohnung"),a=D.fl.filter(f=>f.etage===ETAGE&&f.typ==="Allgemein");
   $("#m").innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><button class="btn sec" onclick="gehe('uebersicht')">‹ Etagen</button><h2 style="margin:0">${ETAGE}. OG</h2>
-  <div class="row"><button class="btn sec" ${ETAGE>=46?"disabled":""} onclick="zeigEtage(${ETAGE+1})">▲</button><button class="btn sec" ${ETAGE<=34?"disabled":""} onclick="zeigEtage(${ETAGE-1})">▼</button></div></div>
+  <div class="row">${(()=>{const l=ETAGEN(),i=l.indexOf(ETAGE),hoch=l[i-1],tief=l[i+1];return`<button class="btn sec" ${hoch==null?"disabled":""} onclick="zeigEtage(${hoch})">▲</button><button class="btn sec" ${tief==null?"disabled":""} onclick="zeigEtage(${tief})">▼</button>`})()}</div></div>
   <p class="meta">Antippen zum Auswählen. Unten erscheinen die passenden Knöpfe.</p>${LEG}
   <h3>Wohnungen</h3><div class="grid">${w.map(kachel).join("")}</div>
   <h3>Allgemeinflächen</h3><div class="grid">${a.map(kachel).join("")}</div>
@@ -328,14 +330,14 @@ function vAufgaben(){let h="";const t=heute();
 
 function vStunden(){const st={angeordnet:`<span class="pill p-blue">angeordnet</span>`,eingetragen:`<span class="pill" style="background:#fff6d6;color:#7a5b00">Stunden eingetragen</span>`,bestaetigt:`<span class="pill p-ok">bestätigt</span>`,zurueckgegeben:`<span class="pill p-red">zurück an ACS</span>`,zurueckgezogen:`<span class="pill p-gr">zurückgezogen</span>`};
   let h="";if(U.rolle==="team"||U.rolle==="buero")h+=`<div class="card"><h2>Stundenarbeit erfassen</h2><p class="meta">Wenn der Bauleiter mündlich oder per Telefon etwas beauftragt: Ihr tragt ein, was gemacht wurde und wie lange. Der Bauleiter muss es nur noch prüfen und unterschreiben.</p>
-  <div class="row"><div class="f" style="flex:1"><label>Ausgeführt am * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se"><option value="">–</option>${[...Array(13)].map((_,i)=>`<option>${46-i}</option>`).join("")}</select></div></div>
+  <div class="row"><div class="f" style="flex:1"><label>Ausgeführt am * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se"><option value="">–</option>${ETAGEN().map(e=>`<option>${e}</option>`).join("")}</select></div></div>
   <div id="kal"></div><div class="f"><label>Beauftragt von (Bauleiter) *</label><input id="sa" placeholder="Name des Bauleiters"></div>
   <div class="f"><label>Was wurde gemacht? *</label><textarea id="sw" rows="2" placeholder="z. B. Bauschutt aus Treppenhaus entfernt, wie telefonisch gewünscht"></textarea></div>
   <div class="row"><input style="flex:1" id="sp" type="number" min="1" placeholder="Personen"><input style="flex:1" id="sh" inputmode="decimal" placeholder="Std. je Person"></div>
   <div class="f"><input id="sn" placeholder="Notiz (z. B. Uhrzeit von–bis)"></div>
   <button class="btn full y" onclick="stdErfassen($('#bis').value,$('#se').value,$('#sw').value.trim(),$('#sa').value.trim(),$('#sp').value,$('#sh').value,$('#sn').value.trim())&&(render(),toast('Gesendet: der Bauleiter sieht es jetzt bei sich'))">An Bauleiter zur Unterschrift senden</button></div>`;
   if(U.rolle==="bauleiter"||U.rolle==="admin")h+=`<div class="card"><h2>Stundenarbeit anordnen</h2><p class="meta">Nur für Arbeiten, die nicht im LV stehen. Gilt als schriftliche Anordnung.</p>
-  <div class="row"><div class="f" style="flex:1"><label>Datum * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se"><option value="">–</option>${[...Array(13)].map((_,i)=>`<option>${46-i}</option>`).join("")}</select></div></div>
+  <div class="row"><div class="f" style="flex:1"><label>Datum * <b id="bisz" style="color:var(--ink)"></b></label><input type="hidden" id="bis"></div><div class="f" style="flex:1"><label>Etage</label><select id="se"><option value="">–</option>${ETAGEN().map(e=>`<option>${e}</option>`).join("")}</select></div></div>
   <div id="kal"></div><div class="f"><label>Tätigkeit *</label><textarea id="sw" rows="2" placeholder="z. B. Bauschutt aus Treppenhaus entfernen"></textarea></div>
   <button class="btn full" onclick="stdAnordnen($('#bis').value,$('#se').value,$('#sw').value.trim())&&(render(),toast('Angeordnet'))">Anordnen</button></div>`;
   const l=[...D.std].sort((a,b)=>b.datum.localeCompare(a.datum)),offenS=D.std.filter(s=>s.status==="eingetragen");
@@ -410,15 +412,15 @@ function abrCsv(){const {dg,st}=nachweisDaten(),a=abrechnung(dg,st),z=[["OZ","Le
 function korrRe(){const neu=$("#rneu").value.trim(),n=rechnungAendern(NWRE,neu,$("#rgr").value.trim());if(n){NWRE=neu;render();toast(n+" Einträge korrigiert")}}
 function tueAbrechnen(){const {dg,st}=nachweisDaten();const nr=$("#rnr").value.trim();if(!nr)return fehler("Rechnungsnummer fehlt.");
   if(!confirm("Alle "+(dg.length+st.length)+" Einträge mit Rechnung "+nr+" markieren?"))return;const n=abrechnen([...dg,...st].map(x=>x.id),nr);if(n){toast(n+" abgerechnet");render()}}
-function dateiName(){return("Leistungsnachweis_FOUR_RT2_"+(NWRE?"RE_"+NWRE:MON)).replace(/[^A-Za-z0-9_-]/g,"_")}
+function dateiName(){return("Leistungsnachweis_"+PROJ.kurz+"_"+(NWRE?"RE_"+NWRE:MON)).replace(/[^A-Za-z0-9_-]/g,"_")}
 function drucken(){const {dg,st}=nachweisDaten();
   $("#druck").innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h1>Leistungsnachweis ${NWRE?"zur Rechnung "+esc(NWRE):"Stand "+MON.split("-").reverse().join("/")}</h1>
   <div>${PROJ.lang} · Auftrag ${PROJ.auftrag} · Projekt ${PROJ.projekt}<br>Auftraggeber: ${PROJ.ag}<br>Auftragnehmer: ACS All Clean Service KG · erstellt ${new Date().toLocaleString("de-DE")} von ${esc(U.name)}</div></div><img src="${LOGO}" style="height:44px"></div>
   <p>Alle Reinigungen wurden vom Bauleiter mit „zu reinigen bis“ angefordert (Anordnung) und nach Ausführung geprüft. Nachreinigungen sind fortlaufend nummeriert (N1, N2 …).</p>
   <table><tr><th>OZ</th><th>Fläche</th><th>Art</th><th>angefordert am / von</th><th>bis</th><th>gereinigt am / von</th><th>geprüft am / von</th></tr>
-  ${dg.map(d=>`<tr><td>${d.oz}</td><td>${esc(fName(F(d.fid)))}</td><td>${art(d.nr)}${d.nach?" (nachgetragen)":""}</td><td>${dtz(d.an_am)} ${esc(d.an_von)}</td><td>${dd(d.bis)}</td><td>${dtz(d.ge_am)} ${esc(d.ge_von)}</td><td>${dtz(d.gp_am)} ${esc(d.gp_von)}</td></tr>`).join("")}</table>
+  ${dg.map(d=>`<tr><td>${d.oz}</td><td>${esc(fName(F(d.fid)))}</td><td>${art(d.nr)}${d.nach?" (nachgetragen)":""}</td><td>${dtz(d.an_am)} ${esc(d.an_von)}</td><td>${dd(d.bis)}</td><td>${dtz(d.ge_am)} ACS</td><td>${dtz(d.gp_am)} ${esc(d.gp_von)}</td></tr>`).join("")}</table>
   <p><b>Zusammenfassung nach OZ:</b> ${Object.entries(dg.reduce((m,d)=>(m[d.oz]=(m[d.oz]||0)+1,m),{})).sort().map(([k,v])=>k+" × "+v).join(" · ")||"–"}</p>
-  ${st.length?`<h2 style="font-size:12px">Stundenarbeiten (angeordnet und bestätigt vom Bauleiter)</h2><table><tr><th>Datum</th><th>Etage</th><th>Tätigkeit</th><th>Pers.</th><th>Std./Pers.</th><th>Std. gesamt</th><th>angeordnet</th><th>bestätigt</th></tr>${st.map(s=>`<tr><td>${dd(s.datum)}</td><td>${s.etage||""}</td><td>${esc(s.was)}</td><td>${s.pers}</td><td>${fz(s.std)}</td><td>${fz(+(s.pers*s.std).toFixed(2))}</td><td>${esc(s.an_von)} ${dtz(s.an_am)}</td><td>${esc(s.be_von)} ${dtz(s.be_am)}${s.sig?`<br><img src="${s.sig}" style="height:30px">`:""}</td></tr>`).join("")}</table>`:""}`;
+  ${st.length?`<h2 style="font-size:12px">Stundenarbeiten (angeordnet und bestätigt vom Bauleiter)</h2><table><tr><th>Datum</th><th>Etage</th><th>Tätigkeit</th><th>Pers.</th><th>Std./Pers.</th><th>Std. gesamt</th><th>angeordnet</th><th>bestätigt</th></tr>${st.map(s=>`<tr><td>${dd(s.datum)}</td><td>${s.etage||""}</td><td>${esc(s.was)}</td><td>${s.pers}</td><td>${fz(s.std)}</td><td>${fz(+(s.pers*s.std).toFixed(2))}</td><td>${esc(String(s.an_von||"").replace(/\(mündlich, erfasst von .*\)$/,"(mündlich, erfasst von ACS)"))} ${dtz(s.an_am)}</td><td>${esc(s.be_von)} ${dtz(s.be_am)}${s.sig?`<br><img src="${s.sig}" style="height:30px">`:""}</td></tr>`).join("")}</table>`:""}`;
   const sg=nwSig();$("#druck").innerHTML+=`<div style="margin-top:18px;display:flex;gap:40px"><div>Bestätigt durch die Bauleitung:<br>${sg?`<img src="${sg.img}" style="height:60px"><br>${esc(sg.name)} · ${dtz(sg.zeit)}`:`<br><br>____________________________<br>Name, Datum, Unterschrift`}</div></div>`;
   sheet(`<div style="overflow-x:auto">${$("#druck").innerHTML}</div><p class="meta">So sieht die Anlage zur Rechnung aus. Im Echtbetrieb wird sie als PDF gespeichert.</p><button class="btn full" onclick="try{print()}catch(e){}">Drucken / PDF versuchen</button>`)}
 function csv(){const {dg,st}=nachweisDaten();const z=[["OZ","Flaeche","Art","angefordert_am","angefordert_von","bis","gereinigt_am","gereinigt_von","geprueft_am","geprueft_von","Rechnung"]];
@@ -480,7 +482,8 @@ window.nwUnterschreiben=function(){if(PROBE)return L.nwUnterschreiben();const {d
 async function alle(tab,sel){let out=[],von=0;for(;;){const {data,error}=await SB.from(tab).select(sel||"*").eq("projekt_id",PID).range(von,von+999);if(error)throw error;out=out.concat(data);if(data.length<1000)return out;von+=1000}}
 async function neuLaden(){if(PROBE||!PID||LADEN)return;LADEN=true;try{
   const preisRolle=["buero","admin"].includes(U&&U.rolle);
-  const [fl,dg,st,ev,sg,pr,ko]=await Promise.all([alle("flaechen"),alle("durchgaenge"),alle("stunden"),alle("ereignisse"),alle("nachweis_unterschriften"),
+  const [fl,dg,st,ev,sg,pr,ko]=await Promise.all([/* Sichten statt Tabellen: Bauleiter bekommen dort statt Namen und Firma nur „ACS“ (Datenbank-Datei 06) */
+    alle("flaechen"),alle("v_durchgaenge"),alle("v_stunden"),alle("v_ereignisse"),alle("nachweis_unterschriften"),
     preisRolle?alle("preise").catch(()=>[]):[],preisRolle?alle("konditionen").catch(()=>[]):[]]);
   D.preise={};pr.forEach(p=>D.preise[p.oz]={txt:p.kurztext,eh:p.einheit,ep:+p.ep,menge:+p.menge_je_flaeche});D.nachlass=ko[0]?+ko[0].nachlass_prozent:0;
   const evDg={},evSt={};ev.sort((a,b)=>a.zeit.localeCompare(b.zeit)).forEach(e=>{const x={dg:e.durchgang_id,typ:e.typ,zeit:e.zeit,von:e.user_name,text:e.text||""};if(e.durchgang_id)(evDg[e.durchgang_id]=evDg[e.durchgang_id]||[]).push(x);else(evSt[e.stunden_id]=evSt[e.stunden_id]||[]).push(x)});
