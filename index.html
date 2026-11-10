@@ -2,7 +2,7 @@
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#163a7a">
-<title>ACS Reinigungsnachweis v10</title>
+<title>ACS Reinigungsnachweis v11</title>
 <style>
 :root{--acs:#163a7a;--acs2:#1f4fa3;--bg:#eef2f8;--card:#fff;--ink:#1d2430;--mut:#667085;--line:#dbe1ea;
 --fr:#2c64c4;--gr:#f6c945;--grb:#d9a800;--gp:#2e8b57;--red:#c0392b;--warn:#c77700}
@@ -26,6 +26,10 @@ h2{font-size:16px;margin:2px 0 10px}h3{font-size:14px;margin:12px 0 6px;color:va
 .fr{background:var(--fr)!important;border-color:var(--fr)!important;color:#fff!important}
 .gr{background:var(--gr)!important;border-color:var(--grb)!important;color:#1d2430!important}
 .gp{background:var(--gp)!important;border-color:var(--gp)!important;color:#fff!important}
+/* Bemängelt (Romano 10.11.2026): blau + rote Striche = vom Kunden bemängelt, offen; gelb + weiße Striche = Mangel behoben, wartet auf Abnahme */
+.bm{background-image:repeating-linear-gradient(135deg,rgba(220,38,38,.95) 0 4px,transparent 4px 12px)!important}
+.bmw{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.95) 0 4px,transparent 4px 12px)!important}
+.tile.bm b,.tile.bm small{text-shadow:0 0 3px #0b2a66,0 0 2px #0b2a66}
 .ue{box-shadow:0 0 0 2px var(--red)}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .tile{position:relative;border:1px solid var(--line);border-radius:10px;padding:9px 2px;text-align:center;background:#fff;min-height:58px;user-select:none}
@@ -77,7 +81,7 @@ const LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVQAAABkCAYAAADZn8isAA
 const PROJ={kurz:"FOUR RT2",lang:"FOUR Frankfurt, Realteil 2 · 34.–46. OG",ag:"G&P Zweite Management GmbH",auftrag:"2026-035348-00",projekt:"60550"};
 const WHG=[[34,"34.01",2,95,"mit Gäste WC","3.23.40.","11.2.70."],[34,"34.02",1,40,"ohne Loggia","3.23.100.","11.2.90."],[34,"34.03",3,100,"mit 2 Badezimmern","3.23.20.","11.2.50."],[34,"34.04",2,65,null,"3.23.70.","11.2.70."],[34,"34.05",3,110,"mit 2 Badezimmern","3.23.10.","11.2.50."],[34,"34.06",2,75,null,"3.23.60.","11.2.70."],[34,"34.07",2,55,null,"3.23.80.","11.2.80."],[34,"34.08",1,40,"ohne Loggia","3.23.90.","11.2.90."],[34,"34.09",2,85,null,"3.23.50.","11.2.70."],[34,"34.10",2,105,null,"3.23.30.","11.2.70."],[35,"35.01",2,95,"mit Gäste WC","3.24.40.","11.2.70."],[35,"35.02",1,40,"ohne Loggia","3.24.100.","11.2.90."],[35,"35.03",3,100,"mit 2 Badezimmern","3.24.20.","11.2.50."],[35,"35.04",2,65,null,"3.24.70.","11.2.70."],[35,"35.05",3,110,"mit 2 Badezimmern","3.24.10.","11.2.50."],[35,"35.06",2,75,null,"3.24.60.","11.2.70."],[35,"35.07",2,55,null,"3.24.80.","11.2.80."],[35,"35.08",1,40,"ohne Loggia","3.24.90.","11.2.90."],[35,"35.09",2,85,null,"3.24.50.","11.2.70."],[35,"35.10",2,105,null,"3.24.30.","11.2.70."],[36,"36.01",2,90,"mit Gäste WC","3.25.40.","11.2.70."],[36,"36.02",1,40,"ohne Loggia","3.25.100.","11.2.90."],[36,"36.03",3,100,"mit 2 Badezimmern","3.25.20.","11.2.50."],[36,"36.04",2,65,null,"3.25.70.","11.2.70."],[36,"36.05",3,110,"mit 2 Badezimmern","3.25.10.","11.2.50."],[36,"36.06",2,75,null,"3.25.60.","11.2.70."],[36,"36.07",2,55,null,"3.25.80.","11.2.80."],[36,"36.08",1,40,"ohne Loggia","3.25.90.","11.2.90."],[36,"36.09",2,85,null,"3.25.50.","11.2.70."],[36,"36.10",2,100,null,"3.25.30.","11.2.70."],[37,"37.01",2,90,"mit Gäste WC","3.26.40.","11.2.70."],[37,"37.02",1,40,"ohne Loggia","3.26.100.","11.2.90."],[37,"37.03",3,100,"mit 2 Badezimmern","3.26.20.","11.2.50."],[37,"37.04",2,65,null,"3.26.70.","11.2.70."],[37,"37.05",3,110,"mit 2 Badezimmern","3.26.10.","11.2.50."],[37,"37.06",2,75,null,"3.26.60.","11.2.70."],[37,"37.07",2,55,null,"3.26.80.","11.2.80."],[37,"37.08",1,40,"ohne Loggia","3.26.90.","11.2.90."],[37,"37.09",2,85,null,"3.26.50.","11.2.70."],[37,"37.10",2,95,null,"3.26.30.","11.2.70."],[38,"38.01",2,85,"mit Gäste WC","3.27.40.","11.2.70."],[38,"38.02",1,40,"ohne Loggia","3.27.100.","11.2.90."],[38,"38.03",3,100,"mit 2 Badezimmern","3.27.20.","11.2.50."],[38,"38.04",2,65,null,"3.27.70.","11.2.70."],[38,"38.05",3,110,"mit 2 Badezimmern","3.27.10.","11.2.50."],[38,"38.06",2,75,null,"3.27.60.","11.2.70."],[38,"38.07",2,55,null,"3.27.80.","11.2.80."],[38,"38.08",1,40,"ohne Loggia","3.27.90.","11.2.90."],[38,"38.09",2,85,null,"3.27.50.","11.2.70."],[38,"38.10",2,95,null,"3.27.30.","11.2.70."],[39,"39.01",2,85,"mit Gäste WC","3.28.40.","11.2.70."],[39,"39.02",1,40,"ohne Loggia","3.28.100.","11.2.90."],[39,"39.03",3,100,"mit 2 Badezimmern","3.28.20.","11.2.50."],[39,"39.04",2,65,null,"3.28.70.","11.2.70."],[39,"39.05",3,110,"mit 2 Badezimmern","3.28.10.","11.2.50."],[39,"39.06",2,75,null,"3.28.60.","11.2.70."],[39,"39.07",2,55,null,"3.28.80.","11.2.80."],[39,"39.08",1,40,"ohne Loggia","3.28.90.","11.2.90."],[39,"39.09",2,85,null,"3.28.50.","11.2.70."],[39,"39.10",2,90,null,"3.28.30.","11.2.70."],[40,"40.01",2,80,"mit Gäste WC","3.29.60.","11.2.70."],[40,"40.02",2,100,"mit Gäste WC","3.29.50.","11.2.70."],[40,"40.03",4,135,"mit 2 Badezimmern","3.29.20.","11.2.30."],[40,"40.04",3,110,"mit 2 Badezimmern","3.29.30.","11.2.50."],[40,"40.05",3,105,"mit 2 Badezimmern","3.29.40.","11.2.50."],[40,"40.06",2,65,null,"3.29.70.","11.2.70."],[40,"40.07",4,140,"mit 2 Badezimmern","3.29.10.","11.2.30."],[41,"41.01",2,80,"mit Gäste WC","3.30.60.","11.2.70."],[41,"41.02",2,100,"mit Gäste WC","3.30.50.","11.2.70."],[41,"41.03",4,140,"mit 2 Badezimmern","3.30.20.","11.2.30."],[41,"41.04",3,105,"mit 2 Badezimmern","3.30.40.","11.2.50."],[41,"41.05",3,110,"mit 2 Badezimmern","3.30.30.","11.2.50."],[41,"41.06",2,60,null,"3.30.70.","11.2.70."],[41,"41.07",4,140,"mit 2 Badezimmern","3.30.10.","11.2.30."],[42,"42.01",2,80,"mit Gäste WC","3.31.60.","11.2.70."],[42,"42.02",2,95,"mit Gäste WC","3.31.50.","11.2.70."],[42,"42.03",4,140,"mit 2 Badezimmern","3.31.20.","11.2.30."],[42,"42.04",3,105,"mit 2 Badezimmern","3.31.40.","11.2.50."],[42,"42.05",3,110,"mit 2 Badezimmern","3.31.30.","11.2.50."],[42,"42.06",2,60,null,"3.31.70.","11.2.70."],[42,"42.07",4,140,"mit 2 Badezimmern","3.31.10.","11.2.30."],[43,"43.01",2,75,"mit Gäste WC","3.32.60.","11.2.70."],[43,"43.02",2,90,"mit Gäste WC","3.32.50.","11.2.70."],[43,"43.03",4,140,"mit 2 Badezimmern","3.32.20.","11.2.30."],[43,"43.04",3,105,"mit 2 Badezimmern","3.32.40.","11.2.50."],[43,"43.05",3,110,"mit 2 Badezimmern","3.32.30.","11.2.50."],[43,"43.06",2,60,null,"3.32.70.","11.2.70."],[43,"43.07",4,140,"mit 2 Badezimmern","3.32.10.","11.2.30."],[44,"44.01",4,145,"mit 2 Badezimmern","3.33.20.","11.2.30."],[44,"44.02",4,205,"mit 2 Badezimmern + Gäste WC","3.33.10.","11.2.20."],[44,"44.03",2,45,"ohne Loggia","3.33.60.","11.2.80."],[44,"44.04",2,75,null,"3.33.50.","11.2.70."],[44,"44.05",3,110,"mit 2 Badezimmern","3.33.40.","11.2.50."],[44,"44.06",3,145,"mit 2 Badezimmern","3.33.30.","11.2.40."],[45,"45.01",4,140,"mit 2 Badezimmern","3.34.20.","11.2.30."],[45,"45.02",4,200,"mit 2 Badezimmern + Gäste WC","3.34.10.","11.2.20."],[45,"45.03",2,45,"ohne Loggia","3.34.60.","11.2.80."],[45,"45.04",2,75,null,"3.34.50.","11.2.70."],[45,"45.05",3,110,"mit 2 Badezimmern","3.34.40.","11.2.50."],[45,"45.06",3,145,"mit 2 Badezimmern","3.34.30.","11.2.40."],[46,"46.01",5,225,"mit 2 Badezimmern + Gäste WC","3.35.10.","11.2.10."],[46,"46.02",4,200,"mit 2 Badezimmern + Gäste WC","3.35.20.","11.2.20."],[46,"46.03",2,45,"ohne Loggia","3.35.50.","11.2.80."],[46,"46.04",4,200,"mit 2 Badezimmern + Gäste WC","3.35.30.","11.2.20."],[46,"46.05",3,50,"ohne Loggia","3.35.40.","11.2.60."]];
 const ALLG=[["Flurflächen","4.1.10.","4.1.60."],["Metalldecken","8.1.20.","8.1.40."],["Holzverkleidung Aufzugsvorräume","4.1.90.","4.1.100."],["Aufzugsvorräume","4.1.70.","4.1.80."],["Treppenhäuser (2)","4.3.10.","4.3.20."],["Gitterrostebene","6.1.90.","6.1.100."],["Aufzugszargen + Türen (2)","4.4.50.","4.4.60."]];
-const ROLLEN={bauleiter:"Bauleiter",team:"ACS-Team",buero:"ACS-Büro",admin:"Admin"};
+const ROLLEN={bauleiter:"Kunde-Bauleitung",team:"ACS Clean Team",buero:"ACS-Büro",admin:"Admin"};
 const KEY="acs_baustelle_four_v1";
 
 /* ---------- Daten (Testbetrieb: nur auf diesem Gerät) ---------- */
@@ -94,6 +98,8 @@ const jetzt=()=>new Date().toISOString();
 const heute=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const F=id=>D.fl.find(f=>f.id===id);
 /* Etagen der geöffneten Baustelle, oben zuerst (nicht fest 34–46, damit jede Baustelle passt) */
+/* Wohnfläche (ca.-Werte aus dem LV) zusammenzählen, nur zur Einschätzung des Aufwands, nicht für den Preis */
+const qmSumme=l=>Math.round(l.filter(f=>f&&f.typ==="Wohnung"&&f.qm).reduce((s,f)=>s+(+f.qm),0));
 const ETAGEN=()=>[...new Set(D.fl.map(f=>f.etage))].sort((a,b)=>b-a);
 function ev(dg,typ,text){D.ev.push({id:nid(),dg:dg?dg.id:null,typ,zeit:jetzt(),von:U.name,rolle:U.rolle,text:text||""})}
 const dgVon=fid=>D.dg.filter(d=>d.fid===fid&&d.status!=="storniert").sort((a,b)=>a.nr-b.nr);
@@ -119,7 +125,7 @@ function anfordern(fids,bis,bem){
     const d={id:nid(),fid,nr,oz:nr===1?f.ozF:f.ozN,status:"angefordert",bis,bem:bem||"",an_am:jetzt(),an_von:U.name};
     D.dg.push(d);ev(d,"angefordert",(art(nr))+", bis "+dd(bis)+(bem?" · "+bem:""));n++});
   speichern();return n}
-function gereinigt(id){const d=D.dg.find(x=>x.id===id);if(!darf("team"))return fehler("Nur das ACS-Team hakt ab.");
+function gereinigt(id){const d=D.dg.find(x=>x.id===id);if(!darf("team"))return fehler("Nur das ACS Clean Team hakt ab.");
   if(!d||d.status!=="angefordert")return fehler("Nicht offen.");d.status="gereinigt";d.ge_am=jetzt();d.ge_von=U.name;ev(d,"gereinigt");speichern();return 1}
 function pruefen(ids){if(!darf("bauleiter"))return fehler("Nur der Bauleiter prüft.");let n=0;
   ids.forEach(id=>{const d=D.dg.find(x=>x.id===id);if(d&&d.status==="gereinigt"){d.status="geprueft";d.gp_am=jetzt();d.gp_von=U.name;ev(d,"geprueft");n++}});speichern();return n}
@@ -145,7 +151,7 @@ function stdErfassen(datum,etage,was,auftr,pers,std,notiz){if(!darf("team","buer
   pers=+pers;std=+String(std).replace(",",".");if(!(pers>0)||!(std>0)||std>24)return fehler("Personen und Stunden prüfen.");
   const s={id:nid(),datum,etage,was,status:"eingetragen",an_am:jetzt(),an_von:auftr+" (mündlich, erfasst von "+U.name+")",muendlich:1,pers,std,notiz:notiz||"",ei_am:jetzt(),ei_von:U.name};
   stdEv(s,"erfasst","mündlich beauftragt von "+auftr+" · "+pers+" Pers. × "+fz(std)+" Std.");D.std.push(s);speichern();return 1}
-function stdEintragen(id,pers,std,notiz){const s=D.std.find(x=>x.id===id);if(!darf("team"))return fehler("Nur das ACS-Team.");
+function stdEintragen(id,pers,std,notiz){const s=D.std.find(x=>x.id===id);if(!darf("team"))return fehler("Nur das ACS Clean Team.");
   pers=+pers;std=+String(std).replace(",",".");if(!(pers>0)||!(std>0)||std>24)return fehler("Personen und Stunden prüfen.");
   if(!s||s.status==="bestaetigt")return fehler("Nicht möglich.");s.pers=pers;s.std=std;s.notiz=notiz||"";s.status="eingetragen";s.ei_am=jetzt();s.ei_von=U.name;
   stdEv(s,"eingetragen",pers+" Pers. × "+fz(std)+" Std."+(notiz?" · "+notiz:""));speichern();return 1}
@@ -167,7 +173,7 @@ function formNachtragen(){const fl=[...SEL].filter(id=>!offen(id)).map(F);
 function tueNachtragen(){const n=nachtragen([...SEL].filter(id=>!offen(id)),$("#bis").value,$("#na").value.trim(),$("#nb").value.trim());if(n){zu();SEL.clear();render();toast(n+" nachgetragen, wartet auf Prüfung")}}
 /* Korrekturen: nie löschen, immer neue Zeile mit Grund */
 const findDg=id=>D.dg.find(x=>x.id===id),findS=id=>D.std.find(x=>x.id===id);
-function gereinigtZurueck(id,txt){const d=findDg(id);if(!darf("team"))return fehler("Nur das ACS-Team.");if(!txt)return fehler("Bitte Grund angeben.");
+function gereinigtZurueck(id,txt){const d=findDg(id);if(!darf("team"))return fehler("Nur das ACS Clean Team.");if(!txt)return fehler("Bitte Grund angeben.");
   if(!d||d.status!=="gereinigt")return fehler("Nur solange der Bauleiter noch nicht geprüft hat.");d.status="angefordert";d.ge_am=null;d.ge_von=null;ev(d,"gereinigt_zurueck",txt);speichern();return 1}
 function bisAendern(id,bis,txt){const d=findDg(id);if(!darf("bauleiter"))return fehler("Nur der Bauleiter.");if(!d||d.status!=="angefordert")return fehler("Nur solange noch nicht gereinigt.");
   if(!bis||bis<heute())return fehler("Datum prüfen.");if(bis===d.bis)return fehler("Das ist schon das Datum.");const alt=d.bis;d.bis=bis;ev(d,"bis_geaendert",dd(alt)+" → "+dd(bis)+(txt?" · "+txt:""));speichern();return 1}
@@ -238,24 +244,28 @@ function zahlAufgaben(){if(U.rolle==="team"||U.rolle==="buero"){const z=D.std.fi
   if(U.rolle==="bauleiter")return D.dg.filter(d=>d.status==="gereinigt").length+D.std.filter(s=>s.status==="eingetragen").length;
   if(U.rolle==="team")return D.dg.filter(d=>d.status==="angefordert").length+D.std.filter(s=>s.status==="angeordnet").length;return 0}
 const ROLLHILFE={bauleiter:["Etage öffnen, Wohnungen oder Allgemeinflächen antippen, „Anfordern“ mit Datum „bis“","Gereinigtes prüfen: „Geprüft“ oder „Nicht in Ordnung“ (unter Aufgaben)","Stundenzettel von ACS unterschreiben (unter Stunden)","Einmal im Monat den Leistungsnachweis unterschreiben (unter Nachweis)"],team:["Unter „Aufgaben“ sehen, was bis wann zu reinigen ist","Nach dem Reinigen „Gereinigt“ tippen","Stundenarbeiten erfassen und an den Bauleiter zur Unterschrift senden (unter Stunden)"],admin:["Alles, was die anderen Rollen können","Fehler korrigieren: Unterschrift aufheben (unter Stunden), Rechnungsnummer ändern oder aufheben (unter Nachweis, Rechnung auswählen)","Im Echtbetrieb: Leute einladen und Rollen vergeben"],buero:["Schon gereinigte, aber noch nicht erfasste Wohnungen nachtragen: Etage öffnen, Wohnungen antippen, „Nachtragen“","Überblick: was ist angefordert, gereinigt, geprüft, was ist überfällig","Stundenarbeiten erfassen, wenn der Bauleiter im Büro anruft","Monatlich unter „Nachweis“ die Anlage zur Rechnung ansehen und nach dem Schreiben der Rechnung die Rechnungsnummer eintragen"]};
-const LEG=`<div class="legend"><span><i></i>nichts gemacht</span><span><i class="fr"></i>angefordert</span><span><i class="gr"></i>von ACS gereinigt</span><span><i class="gp"></i>geprüft, frei zum Abrechnen</span><span><i style="box-shadow:0 0 0 2px var(--red)"></i>überfällig</span></div>`;
+const LEG=`<div class="legend"><span><i></i>nichts gemacht</span><span><i class="fr"></i>angefordert</span><span><i class="gr"></i>von ACS gereinigt</span><span><i class="gp"></i>geprüft, frei zum Abrechnen</span><span><i class="fr bm"></i>bemängelt, offen</span><span><i class="gr bmw"></i>Mangel behoben, wartet auf Abnahme</span><span><i style="box-shadow:0 0 0 2px var(--red)"></i>überfällig</span></div>`;
+/* Ist der offene Durchgang dieser Fläche schon einmal mit „Nicht in Ordnung“ zurückgekommen? */
+const maengel=fid=>{const o=offen(fid);return o?D.ev.filter(e=>e.dg===o.id&&e.typ==="nicht_ok"):[]};
+const strich=fid=>{const o=offen(fid);if(!o||!maengel(fid).length)return"";return o.status==="gereinigt"?" bmw":" bm"};
 
 function vUebersicht(){const et=[...new Set(D.fl.map(f=>f.etage))].sort((a,b)=>b-a);
-  const z={fr:0,gr:0,gp:0,ue:0};D.fl.forEach(f=>{const c=farbe(f.id);if(c)z[c]++;if(ueberf(offen(f.id)))z.ue++});
+  const z={fr:0,gr:0,gp:0,ue:0,bm:0};D.fl.forEach(f=>{const c=farbe(f.id);if(c)z[c]++;if(ueberf(offen(f.id)))z.ue++;if(strich(f.id))z.bm++});
   let h=`${ROLLHILFE[U.rolle]?`<div class="card" style="background:#eaf1fd;border-color:#c9d8f5"><b>Als ${ROLLEN[U.rolle]} machst du:</b><ul style="margin:6px 0 0;padding-left:18px">${ROLLHILFE[U.rolle].map(x=>`<li>${x}</li>`).join("")}</ul></div>`:""}<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Etagen</h2><span class="meta">${PROJ.lang}</span></div>
-  <div class="row" style="margin:10px 0"><span class="pill p-blue">${z.fr} angefordert</span><span class="pill" style="background:#fff6d6;color:#7a5b00">${z.gr} gereinigt</span><span class="pill p-ok">${z.gp} geprüft</span>${z.ue?`<span class="pill p-red">${z.ue} überfällig</span>`:""}</div>${LEG}</div><div class="card">`;
+  <div class="row" style="margin:10px 0"><span class="pill p-blue">${z.fr} angefordert</span><span class="pill" style="background:#fff6d6;color:#7a5b00">${z.gr} gereinigt</span><span class="pill p-ok">${z.gp} geprüft</span>${z.ue?`<span class="pill p-red">${z.ue} überfällig</span>`:""}${z.bm?`<span class="pill p-red">${z.bm} bemängelt</span>`:""}</div>${LEG}</div><div class="card">`;
   et.forEach(e=>{const w=D.fl.filter(f=>f.etage===e&&f.typ==="Wohnung"),a=D.fl.filter(f=>f.etage===e&&f.typ==="Allgemein");
     const fertig=w.filter(f=>farbe(f.id)==="gp").length;
     const ac=a.some(f=>ueberf(offen(f.id)))?" ue":"";const af=a.map(f=>farbe(f.id));
     const aCls=af.includes("fr")?"fr":af.includes("gr")?"gr":af.filter(Boolean).length?"gp":"";
-    h+=`<div class="et" onclick="zeigEtage(${e})"><div class="nm">${e}. OG</div><div class="mini">${w.map(f=>`<i class="${farbe(f.id)}${ueberf(offen(f.id))?" ue":""}"></i>`).join("")}<i class="al ${aCls}${ac}">Allg.</i></div><div class="cnt">${fertig}/${w.length} ›</div></div>`});
+    const as=a.map(f=>strich(f.id)),aStr=as.includes(" bm")?" bm":as.includes(" bmw")?" bmw":"";
+    h+=`<div class="et" onclick="zeigEtage(${e})"><div class="nm">${e}. OG</div><div class="mini">${w.map(f=>`<i class="${farbe(f.id)}${strich(f.id)}${ueberf(offen(f.id))?" ue":""}"></i>`).join("")}<i class="al ${aCls}${aStr}${ac}">Allg.</i></div><div class="cnt">${fertig}/${w.length} ›</div></div>`});
   $("#m").innerHTML=h+"</div>"}
 function zeigEtage(e){ETAGE=e;VIEW="etage";SEL.clear();render();scrollTo(0,0)}
 function kachel(f){const d=letzter(f.id),c=farbe(f.id),o=offen(f.id);
-  return `<div class="tile ${c} ${ueberf(o)?"ue":""} ${SEL.has(f.id)?"sel":""}" onclick="tippe('${f.id}')">${d&&d.nr>1?`<span class="n">${kurzArt(d.nr)}</span>`:""}
-  <b>${f.typ==="Wohnung"?f.nummer.split(".")[1]:f.nummer.split(" ")[1]}</b><small>${f.typ==="Wohnung"?f.zi+"-Zi":esc(f.name.split(" ")[0])}</small>${o&&o.bis?`<small>bis ${dd(o.bis).slice(0,6)}</small>`:""}${d&&d.rechnung?`<span class="rb">RE</span>`:""}</div>`}
+  return `<div class="tile ${c}${strich(f.id)} ${ueberf(o)?"ue":""} ${SEL.has(f.id)?"sel":""}" onclick="tippe('${f.id}')">${d&&d.nr>1?`<span class="n">${kurzArt(d.nr)}</span>`:""}
+  <b>${f.typ==="Wohnung"?f.nummer.split(".")[1]:f.nummer.split(" ")[1]}</b><small>${f.typ==="Wohnung"?f.zi+"-Zi":esc(f.name.split(" ")[0])}</small>${f.typ==="Wohnung"&&f.qm?`<small>ca. ${fz(f.qm)} m²</small>`:""}${o&&o.bis?`<small>bis ${dd(o.bis).slice(0,6)}</small>`:""}${d&&d.rechnung?`<span class="rb">RE</span>`:""}</div>`}
 function vEtage(){const w=D.fl.filter(f=>f.etage===ETAGE&&f.typ==="Wohnung"),a=D.fl.filter(f=>f.etage===ETAGE&&f.typ==="Allgemein");
-  $("#m").innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><button class="btn sec" onclick="gehe('uebersicht')">‹ Etagen</button><h2 style="margin:0">${ETAGE}. OG</h2>
+  $("#m").innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><button class="btn sec" onclick="gehe('uebersicht')">‹ Etagen</button><div style="text-align:center"><h2 style="margin:0">${ETAGE}. OG</h2><div class="meta">${w.length} Wohnungen${qmSumme(w)?" · ca. "+qmSumme(w).toLocaleString("de-DE")+" m²":""}</div></div>
   <div class="row">${(()=>{const l=ETAGEN(),i=l.indexOf(ETAGE),hoch=l[i-1],tief=l[i+1];return`<button class="btn sec" ${hoch==null?"disabled":""} onclick="zeigEtage(${hoch})">▲</button><button class="btn sec" ${tief==null?"disabled":""} onclick="zeigEtage(${tief})">▼</button>`})()}</div></div>
   <p class="meta">Antippen zum Auswählen. Unten erscheinen die passenden Knöpfe.</p>${LEG}
   <h3>Wohnungen</h3><div class="grid">${w.map(kachel).join("")}</div>
@@ -318,9 +328,9 @@ function vAufgaben(){let h="";const t=heute();
   const auf=D.dg.filter(d=>d.status==="angefordert").sort((a,b)=>a.bis.localeCompare(b.bis)||a.fid.localeCompare(b.fid));
   const zp=D.dg.filter(d=>d.status==="gereinigt").sort((a,b)=>a.ge_am.localeCompare(b.ge_am));
   const blk=(d,btn)=>{const f=F(d.fid);return`<div class="task ${d.status==="gereinigt"?"gr":""}"><div class="h"><span>${esc(fName(f))}</span>${d.status==="angefordert"?pill(d):`<span class="pill" style="background:#fff6d6;color:#7a5b00">gereinigt ${dt(d.ge_am)}</span>`}</div>
-    <div class="meta">${d.nach?`<b>nachgetragen von ${esc(d.nach_von)}</b> · `:""}${art(d.nr)} · OZ ${d.oz} · angefordert ${dtz(d.an_am)} von ${esc(d.an_von)}${d.bem?"<br>„"+esc(d.bem)+"“":""}${d.ge_von?"<br>gereinigt von "+esc(d.ge_von):""}</div><div class="row" style="margin-top:8px">${btn}${korrBtn(d)}<button class="btn sec" onclick="verlauf('${d.fid}')">Verlauf</button></div></div>`};
+    <div class="meta">${f.typ==="Wohnung"&&f.qm?`<b>${f.zi}-Zi · ca. ${fz(f.qm)} m²</b> · `:""}${d.nach?`<b>nachgetragen von ${esc(d.nach_von)}</b> · `:""}${art(d.nr)} · OZ ${d.oz} · angefordert ${dtz(d.an_am)} von ${esc(d.an_von)}${d.bem?"<br>„"+esc(d.bem)+"“":""}${maengel(d.fid).length?`<br><b style="color:var(--red)">Bemängelt${maengel(d.fid).length>1?" ("+maengel(d.fid).length+"×)":""}: ${esc(maengel(d.fid).slice(-1)[0].text||"")}</b>`:""}${d.ge_von?"<br>gereinigt von "+esc(d.ge_von):""}</div><div class="row" style="margin-top:8px">${btn}${korrBtn(d)}<button class="btn sec" onclick="verlauf('${d.fid}')">Verlauf</button></div></div>`};
   const stdA=D.std.filter(s=>s.status==="angeordnet"),stdE=D.std.filter(s=>s.status==="eingetragen");
-  if(U.rolle!=="bauleiter"){h+=`<div class="card"><h2>Zu reinigen (${auf.length})</h2><p class="meta">Sortiert nach „bis“. Rot = überfällig.</p>${auf.map(d=>blk(d,darf("team")?`<button class="btn y" onclick="gereinigt('${d.id}')&&(render(),toast('Gereinigt gemeldet'))">Gereinigt</button>`:"")).join("")||`<p class="empty">Nichts offen.</p>`}</div>`;
+  if(U.rolle!=="bauleiter"){h+=`<div class="card"><h2>Zu reinigen (${auf.length})</h2>${qmSumme(auf.map(d=>F(d.fid)))?`<p class="meta"><b>Wohnfläche zusammen ca. ${qmSumme(auf.map(d=>F(d.fid))).toLocaleString("de-DE")} m²</b> (ohne Allgemeinflächen)</p>`:""}<p class="meta">Sortiert nach „bis“. Rot = überfällig.</p>${auf.map(d=>blk(d,darf("team")?`<button class="btn y" onclick="gereinigt('${d.id}')&&(render(),toast('Gereinigt gemeldet'))">Gereinigt</button>`:"")).join("")||`<p class="empty">Nichts offen.</p>`}</div>`;
     if(stdA.length)h+=`<div class="card"><h2>Angeordnete Stundenarbeiten (${stdA.length})</h2><p class="meta">Stunden eintragen unter „Stunden“.</p></div>`}
   h+=`<div class="card"><h2>Zu prüfen (${zp.length})</h2><p class="meta">Von ACS gereinigt, wartet auf den Bauleiter.</p>${zp.map(d=>blk(d,darf("bauleiter")?`<button class="btn ok" onclick="pruefen(['${d.id}'])&&(render(),toast('Geprüft'))">Geprüft</button><button class="btn red" onclick="formNichtOk('${d.id}')">Nicht ok</button>`:"")).join("")||`<p class="empty">Nichts zu prüfen.</p>`}
   ${zp.length>1&&darf("bauleiter")?`<button class="btn full ok" onclick="pruefen(${JSON.stringify(zp.map(d=>d.id)).replace(/"/g,"'")})&&(render(),toast('Alle geprüft'))">Alle ${zp.length} geprüft</button>`:""}</div>`;
@@ -429,7 +439,7 @@ function csv(){const {dg,st}=nachweisDaten();const z=[["OZ","Flaeche","Art","ang
   const b=new Blob(["﻿"+z.map(r=>r.map(c=>'"'+String(c??"").replace(/"/g,'""')+'"').join(";")).join("\r\n")],{type:"text/csv"});
   const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=dateiName()+".csv";a.click()}
 
-const NAMEN={bauleiter:"Bauleiter (Probe)",team:"ACS-Team (Probe)",buero:"ACS-Büro (Probe)",admin:"Romano (Admin, Probe)"};
+const NAMEN={bauleiter:"Kunde-Bauleitung (Probe)",team:"ACS Clean Team (Probe)",buero:"ACS-Büro (Probe)",admin:"Romano (Admin, Probe)"};
 function renderLogin(){$("#app").innerHTML=`<div class="login card"><img src="${LOGO}" alt="ACS All Clean Service KG"><h2 style="margin-top:14px">ACS Reinigungsnachweis</h2>
   <p class="meta">Die App von ACS All Clean Service KG für Baustellen-Reinigung.</p>
   <p class="pill p-red" style="white-space:normal">PROBEBETRIEB – Sie sind nicht angemeldet</p>
@@ -529,7 +539,16 @@ window.renderLogin=async function(){if(PROBE)return L.renderLogin();
     ${pr.map((p,i)=>`<button class="btn full" onclick="projektOeffnen(${i})">${esc(p.kurzname)} · ${esc(ROLLEN[p.rolle]||p.rolle)}</button>`).join("")}
     <button class="btn full sec" onclick="ausloggen()">Abmelden</button></div>`;
   window._pr=pr;if(pr.length===1&&!window._gewaehlt)projektOeffnen(0)};
-async function codeSenden(){const m=$("#lm").value.trim().toLowerCase();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))return toast("Bitte E-Mail prüfen");
+/* Tippfehler in E-Mail-Adressen erkennen (Romano 10.11.2026: „allcleansevice.de“, „allcleanservice.de.de“) */
+const MAILDOM=["allcleanservice.de","gmail.com","googlemail.com","gmx.de","gmx.net","web.de","t-online.de","outlook.com","outlook.de","hotmail.com","hotmail.de","icloud.com","yahoo.com","yahoo.de","freenet.de","aol.com"];
+function abstand(a,b){const d=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=d[0];d[0]=i;for(let j=1;j<=b.length;j++){const t=d[j];d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return d[b.length]}
+function mailVorschlag(m){m=String(m||"").trim().toLowerCase();const i=m.lastIndexOf("@");if(i<1)return null;const n=m.slice(0,i);let dom=m.slice(i+1);
+  dom=dom.replace(/(\.[a-z]{2,4})\1+$/,"$1").replace(/\.+/g,".").replace(/^\.|\.$/g,"");
+  if(!MAILDOM.includes(dom)){let best=null,bd=9;MAILDOM.forEach(k=>{const x=abstand(dom,k);if(x<bd){bd=x;best=k}});if(best&&bd<=2)dom=best}
+  const v=n+"@"+dom;return v!==m?v:null}
+function mailPruefen(m){const v=mailVorschlag(m);if(!v)return m;
+  return confirm("Die E-Mail-Adresse sieht nach einem Tippfehler aus:\n\n   "+m+"\n\nMeinten Sie:\n\n   "+v+"\n\nOK = richtige Adresse nehmen\nAbbrechen = so lassen, wie eingegeben")?v:m}
+async function codeSenden(){let m=$("#lm").value.trim().toLowerCase();m=mailPruefen(m);$("#lm").value=m;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m))return toast("Bitte E-Mail prüfen");
   const {error}=await SB.auth.signInWithOtp({email:m,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}});
   if(error)return toast(error.message);LOGIN_MAIL=m;try{localStorage.setItem(MAIL_KEY,m+"|"+Date.now())}catch(e){}toast("Code ist unterwegs. Bitte Postfach prüfen (auch Spam).");$("#codefeld").style.display="block";$("#lc").focus()}
 async function codePruefen(){const t=$("#lc").value.replace(/\D/g,"");if(t.length<6)return toast("Bitte den Code aus der E-Mail eingeben");
@@ -557,7 +576,7 @@ function probeStart(){PROBE=true;L.laden();L.renderLogin()}
 /* ---- Admin: Zugänge ---- */
 async function vZugaenge(){const m=$("#m");if(U.rolle!=="admin"){m.innerHTML="";return}
   m.innerHTML=`<div class="card"><h2>Einladungslink erstellen</h2><p class="meta">Den Link per WhatsApp oder E-Mail schicken. Wer ihn öffnet, meldet sich mit seiner E-Mail an und bekommt die gewählte Rolle in ${esc(PROJ.kurz)}.</p>
-   <div class="f"><label>1. Rolle *</label><select id="zr" onchange="zRolle()"><option value="">– bitte wählen –</option><option value="bauleiter">Bauleiter</option><option value="team">ACS-Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
+   <div class="f"><label>1. Rolle *</label><select id="zr" onchange="zRolle()"><option value="">– bitte wählen –</option><option value="bauleiter">Kunde-Bauleitung</option><option value="team">ACS Clean Team</option><option value="buero">ACS-Büro</option><option value="admin">Admin</option></select></div>
    <div class="f" id="zfw" style="display:none"><label>2. Firma (Name der Firma, keine E-Mail-Adresse)</label><input id="zf" list="zfl" placeholder="z. B. ACS oder Name des Nachunternehmers"><datalist id="zfl"></datalist>
    <div class="meta">Jede Firma bekommt ihren eigenen Link. Wer über diesen Link kommt, gehört fest zu dieser Firma. So steht bei jeder Reinigung, welche Firma sie gemacht hat.</div></div>
    <div class="f"><label>E-Mail-Adresse der Person (nur für den Knopf „E-Mail“, freiwillig)</label><input id="zmail" type="email" placeholder="z. B. name@firma.de"></div>
@@ -570,7 +589,7 @@ async function vZugaenge(){const m=$("#m");if(U.rolle!=="admin"){m.innerHTML="";
   $("#zml").innerHTML=data.map(x=>`<div class="task" style="${x.aktiv?"":"opacity:.5"}"><div class="h"><span>${esc(x.name)}</span><span class="pill p-blue">${ROLLEN[x.rolle]||x.rolle}</span></div><div class="meta">${esc(x.email)}${x.firma?" · "+esc(x.firma):""} · seit ${dt(x.seit)}${x.aktiv?"":" · gesperrt"}</div>
     <div class="row" style="margin-top:6px">${x.email&&x.rolle!=="admin"?`<button class="btn ${x.aktiv?"red":"sec"}" onclick="mitgliedAktiv('${x.user_id}',${!x.aktiv})">${x.aktiv?"Zugang sperren":"Wieder freigeben"}</button><button class="btn sec" onclick="mitgliedRolle('${x.user_id}','${x.rolle}')">Rolle ändern</button>`:""}${x.rolle!=="bauleiter"?`<button class="btn sec" onclick="mitgliedFirma('${x.user_id}','${esc(x.firma||"").replace(/'/g,"")}')">Firma ${x.firma?"ändern":"eintragen"}</button>`:""}</div></div>`).join("")}
 async function mitgliedRolle(uid,alt){const k=["bauleiter","team","buero","admin"];
-  const w=prompt("Neue Rolle (bisher: "+ROLLEN[alt]+")\n\n1 = Bauleiter\n2 = ACS-Team\n3 = ACS-Büro\n4 = Admin\n\nBitte die Zahl eingeben:");if(w===null)return;
+  const w=prompt("Neue Rolle (bisher: "+ROLLEN[alt]+")\n\n1 = Kunde-Bauleitung\n2 = ACS Clean Team\n3 = ACS-Büro\n4 = Admin\n\nBitte die Zahl eingeben:");if(w===null)return;
   const r=k[+w.trim()-1];if(!r)return toast("Bitte 1, 2, 3 oder 4 eingeben");if(r===alt)return toast("Das ist schon die Rolle");
   if(r==="admin"&&!confirm("Admin darf alles, auch Zugänge verwalten und Preise sehen. Wirklich zum Admin machen?"))return;
   const {error}=await SB.rpc("fn_mitglied_rolle",{p_projekt:PID,p_user:uid,p_rolle:r});
@@ -585,7 +604,7 @@ async function einladungenZeigen(){const el=$("#zel");if(!el)return;
 async function einladungSperren(c){if(!confirm("Diesen Link sperren? Wer schon drin ist, bleibt drin. Neue Personen kommen damit nicht mehr herein."))return;
   const {error}=await SB.rpc("fn_einladung_deaktivieren",{p_code:c});if(error)return toast(error.message);toast("Link gesperrt");einladungenZeigen()}
 async function einladungErstellen(){const r=$("#zr").value;if(!r)return toast("Bitte zuerst die Rolle wählen");
-  const fi=r==="bauleiter"?"":$("#zf").value.trim(),mail=$("#zmail").value.trim();
+  const fi=r==="bauleiter"?"":$("#zf").value.trim();let mail=$("#zmail").value.trim();if(mail){mail=mailPruefen(mail);$("#zmail").value=mail}
   if(fi.includes("@"))return toast("Bei Firma bitte den Firmennamen eintragen, keine E-Mail-Adresse. Die E-Mail gehört ins Feld darunter.");
   if(r==="team"&&fi.length<2)return toast("Bitte die Firma angeben");
   if(!confirm("Link erstellen für: "+ROLLEN[r]+(fi?", Firma "+fi:"")+"?\n\nWer den Link öffnet, bekommt genau diese Rolle."))return;
